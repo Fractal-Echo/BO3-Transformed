@@ -148,14 +148,92 @@ static std::vector<Camo> CamoList = {
 
 static int selectedCamoIndex = 0;
 
+static bool CanPatchAddress(HANDLE process, uintptr_t address) {
+    return process != nullptr && address != 0;
+}
+
+template <typename T>
+static bool PatchValue(HANDLE process, uintptr_t address, const T& value) {
+    if (!CanPatchAddress(process, address))
+        return false;
+
+    mem::PatchEx(reinterpret_cast<BYTE*>(address),
+        reinterpret_cast<BYTE*>(const_cast<T*>(&value)),
+        sizeof(value),
+        process);
+    return true;
+}
+
+static bool PatchBytes(HANDLE process, uintptr_t address, const char* bytes, size_t size) {
+    if (!CanPatchAddress(process, address) || bytes == nullptr || size == 0)
+        return false;
+
+    mem::PatchEx(reinterpret_cast<BYTE*>(address),
+        reinterpret_cast<BYTE*>(const_cast<char*>(bytes)),
+        size,
+        process);
+    return true;
+}
+
+static bool WriteString(HANDLE process, uintptr_t address, const char* value) {
+    if (!CanPatchAddress(process, address) || value == nullptr)
+        return false;
+
+    mem::WriteStringEx(reinterpret_cast<BYTE*>(address), value, process);
+    return true;
+}
+
+template <typename T>
+static bool PatchToggleValueOnChange(
+    HANDLE process,
+    uintptr_t address,
+    bool enabled,
+    bool& initialized,
+    bool& previousEnabled,
+    const T& enabledValue,
+    const T& disabledValue) {
+    if (initialized && previousEnabled == enabled)
+        return true;
+
+    if (!PatchValue(process, address, enabled ? enabledValue : disabledValue))
+        return false;
+
+    initialized = true;
+    previousEnabled = enabled;
+    return true;
+}
+
+static bool PatchToggleBytesOnChange(
+    HANDLE process,
+    uintptr_t address,
+    bool enabled,
+    bool& initialized,
+    bool& previousEnabled,
+    const char* enabledBytes,
+    size_t enabledSize,
+    const char* disabledBytes,
+    size_t disabledSize) {
+    if (initialized && previousEnabled == enabled)
+        return true;
+
+    if (!PatchBytes(process,
+        address,
+        enabled ? enabledBytes : disabledBytes,
+        enabled ? enabledSize : disabledSize)) {
+        return false;
+    }
+
+    initialized = true;
+    previousEnabled = enabled;
+    return true;
+}
+
 bool PatchWeaponID(uintptr_t addr, int id, HANDLE hProcess) {
-    mem::PatchEx((BYTE*)addr, (BYTE*)&id, sizeof(id), hProcess);
-    return true; // always returns true since PatchEx is void
+    return PatchValue(hProcess, addr, id);
 }
 
 bool PatchCamoID(uintptr_t addr2, int id, HANDLE hProcess) {
-    mem::PatchEx((BYTE*)addr2, (BYTE*)&id, sizeof(id), hProcess);
-    return true; // always returns true since PatchEx is void
+    return PatchValue(hProcess, addr2, id);
 }
 
 
@@ -223,7 +301,7 @@ void RainbowCycleLoop() {
 
         for (int RainbowValue = 1; RainbowValue <= 126; ++RainbowValue) {
             if (stopThread.load()) break;
-            mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&RainbowValue, sizeof(RainbowValue), hProcess);
+            PatchValue(hProcess, CamoAddr2, RainbowValue);
             std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Rainbow Delay //100 MS original value
         }
     }
@@ -233,7 +311,7 @@ void RainbowCycleLoop2() {
     while (!stopThread2.load()) {
         for (int RainbowValue2 = 1; RainbowValue2 <= 126; ++RainbowValue2) {
             if (stopThread2.load()) break;
-            mem::PatchEx((BYTE*)TableCamoAddr, (BYTE*)&RainbowValue2, sizeof(RainbowValue2), hProcess);
+            PatchValue(hProcess, TableCamoAddr, RainbowValue2);
             std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Rainbow Delay //100 MS original value
         }
     }
@@ -243,7 +321,7 @@ void RainbowCycleLoop3() {
     while (!stopThread3.load()) {
         for (int RainbowValue3 = 1; RainbowValue3 <= 126; ++RainbowValue3) {
             if (stopThread3.load()) break;
-            mem::PatchEx((BYTE*)CamoAddr5, (BYTE*)&RainbowValue3, sizeof(RainbowValue3), hProcess);
+            PatchValue(hProcess, CamoAddr5, RainbowValue3);
             std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Rainbow Delay //100 MS original value
         }
     }
@@ -505,11 +583,11 @@ int main(int, char**) {
 
             if (bBank)
             {
-                mem::PatchEx((BYTE*)BankAddr, (BYTE*)&m1, sizeof(m1), hProcess);
+                PatchValue(hProcess, BankAddr, m1);
             }
             else
             {
-                mem::PatchEx((BYTE*)BankAddr, (BYTE*)&m0, sizeof(m0), hProcess);
+                PatchValue(hProcess, BankAddr, m0);
             }
 
             /*
@@ -618,8 +696,8 @@ int main(int, char**) {
                         }
 
                         int CamoID = CamoList[i].id;
-                        if (!PatchWeaponID(camoAddrToUse, CamoID, hProcess)) {
-                            std::cerr << "Failed to patch weapon ID to process memory!" << std::endl;
+                        if (!PatchCamoID(camoAddrToUse, CamoID, hProcess)) {
+                            std::cerr << "Failed to patch camo ID to process memory!" << std::endl;
                         }
                         else {
                             std::cout << "Patched Camo ID: " << CamoID
@@ -684,7 +762,7 @@ int main(int, char**) {
                     }
 
 
-                    mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&originalCamoValue, sizeof(originalCamoValue), hProcess);
+                    PatchValue(hProcess, CamoAddr2, originalCamoValue);
                 }
             }
 
@@ -703,7 +781,7 @@ int main(int, char**) {
                         rainbowThread2.join();
                     }
                     int staticColorValue = 0;
-                    mem::PatchEx((BYTE*)CamoAddr4, (BYTE*)&staticColorValue, sizeof(staticColorValue), hProcess);
+                    PatchValue(hProcess, CamoAddr4, staticColorValue);
                     //  mem::PatchEx((BYTE*)(moduleBase + 0x427A75), (BYTE*)"\x74\x0D", 2, hProcess);
                 }
             }
@@ -722,7 +800,7 @@ int main(int, char**) {
                         rainbowThread3.join();
                     }
                     int staticColorValue = 0;
-                    mem::PatchEx((BYTE*)CamoAddr5, (BYTE*)&staticColorValue, sizeof(staticColorValue), hProcess);
+                    PatchValue(hProcess, CamoAddr5, staticColorValue);
                     //  mem::PatchEx((BYTE*)(moduleBase + 0x427A75), (BYTE*)"\x74\x0D", 2, hProcess);
                 }
             }
@@ -902,45 +980,53 @@ int main(int, char**) {
         }
 
 
-        if (bAmmo)
+        static bool ammoPatchApplied = false;
+        if (bAmmo && !ammoPatchApplied)
         {
-            mem::PatchEx((BYTE*)(moduleBase + 0x27C8234), (BYTE*)"\xC7\x84\x83\x84\x06\x00\x00\x67\x02\x00\x00\x90\x90\x90\x90", 15, hProcess);
+            const bool patchedAmmo = PatchBytes(hProcess, moduleBase + 0x27C8234, "\xC7\x84\x83\x84\x06\x00\x00\x67\x02\x00\x00\x90\x90\x90\x90", 15);
 
             int A1 = 615;
-            mem::PatchEx((BYTE*)LeftPistolAddr, (BYTE*)&A1, sizeof(A1), hProcess);
-            //Unlimited Grenades 
-            mem::PatchEx((BYTE*)(moduleBase + 0x27C6E9A), (BYTE*)"\x8B\xFF", 2, hProcess);
+            const bool patchedLeftPistol = PatchValue(hProcess, LeftPistolAddr, A1);
+            //Unlimited Grenades
+            const bool patchedGrenades = PatchBytes(hProcess, moduleBase + 0x27C6E9A, "\x8B\xFF", 2);
+            ammoPatchApplied = patchedAmmo && patchedLeftPistol && patchedGrenades;
         }
-        else
+        else if (!bAmmo)
         {
             //    mem::PatchEx((BYTE*)(moduleBase + 0x27C8234), (BYTE*)"\x83\xBC\x83\x84\x06\x00\x00\x00\x75\x0B\xB8\x01\x00\x00\x00", 15, hProcess);
 
 
              //   mem::PatchEx((BYTE*)(moduleBase + 0x27C6E9A), (BYTE*)"\x8B\x01", 2, hProcess);
+            ammoPatchApplied = false;
         }
 
 
-        if (bName)
+        static bool namePatchInitialized = false;
+        static bool previousNameEnabled = false;
+        if (!namePatchInitialized || previousNameEnabled != bName)
         {
-            bNameToggle = true;
-            //mem::WriteStringEx((BYTE*)NameAddr, "^1[DivX]SyntaX-_-", hProcess);
-            mem::WriteStringEx((BYTE*)NameAddr, "Danny", hProcess);
-        }
-        else
-        {
-            bNameToggle = false;
-            mem::WriteStringEx((BYTE*)NameAddr, "^1SyntaX-_-", hProcess);
+            const char* playerName = bName ? "Danny" : "^1SyntaX-_-";
+            if (WriteString(hProcess, NameAddr, playerName))
+            {
+                bNameToggle = bName;
+                previousNameEnabled = bName;
+                namePatchInitialized = true;
+            }
         }
 
 
-        if (isPatched)
-        {
-            mem::PatchEx((BYTE*)(moduleBase + 0x27EB255), (BYTE*)"\x75\x06", 2, hProcess);
-        }
-        else
-        {
-            mem::PatchEx((BYTE*)(moduleBase + 0x27EB255), (BYTE*)"\x74\x06", 2, hProcess);
-        }
+        static bool clanBypassPatchInitialized = false;
+        static bool previousClanBypassEnabled = false;
+        PatchToggleBytesOnChange(
+            hProcess,
+            moduleBase + 0x27EB255,
+            isPatched,
+            clanBypassPatchInitialized,
+            previousClanBypassEnabled,
+            "\x75\x06",
+            2,
+            "\x74\x06",
+            2);
 
         if (bClan)
         {
@@ -990,13 +1076,13 @@ int main(int, char**) {
         {
             const size_t lastByteOffset = 23;
             BYTE Galaxy = 0x7D;
-            mem::PatchEx((BYTE*)(HookLastByteAddr + lastByteOffset), &Galaxy, sizeof(Galaxy), hProcess);
+            PatchValue(hProcess, HookLastByteAddr + lastByteOffset, Galaxy);
         }
 
 
         if (GetAsyncKeyState(VK_F4))
         {
-            mem::PatchEx((BYTE*)BankAddr, (BYTE*)&m1, sizeof(m1), hProcess);
+            PatchValue(hProcess, BankAddr, m1);
         }
 
 
@@ -1025,43 +1111,50 @@ int main(int, char**) {
         }
         */
 
-        if (bSvCheats)
+        static bool svCheatsPatchInitialized = false;
+        static bool previousSvCheatsEnabled = false;
+        PatchToggleValueOnChange(
+            hProcess,
+            SvCheatsAddr,
+            bSvCheats,
+            svCheatsPatchInitialized,
+            previousSvCheatsEnabled,
+            ON,
+            OFF);
+        static bool rapidPatchInitialized = false;
+        static bool previousRapidEnabled = false;
+        if (!rapidPatchInitialized || previousRapidEnabled != bRapid)
         {
-            //   int C1 = 285587035;
-            mem::PatchEx((BYTE*)SvCheatsAddr, (BYTE*)&ON, sizeof(ON), hProcess);
-        }
-        else
-        {
-            // int C1 = 694749996;
-            mem::PatchEx((BYTE*)SvCheatsAddr, (BYTE*)&OFF, sizeof(OFF), hProcess);
-        }
+            const bool patchedMain = PatchBytes(
+                hProcess,
+                moduleBase + 0x27B6353,
+                bRapid ? "\xC7\x04\x38\x00\x00\x00\x00\x90\x90\x90" : "\x89\x0C\x38\x44\x38\xAE\x68\x0E\x00\x00",
+                10);
+            const bool patchedShotguns = PatchBytes(
+                hProcess,
+                moduleBase + 0x27C6519,
+                bRapid ? "\xC7\x40\x2C\x02\x00\x00\x00\x90\x90" : "\x44\x08\x70\x2C\xE8\x5E\xB4\x00\x00",
+                9);
 
-
-
-        if (bRapid)//Need logic for burst fire weapons
-        {
-            mem::PatchEx((BYTE*)(moduleBase + 0x27B6353), (BYTE*)"\xC7\x04\x38\x00\x00\x00\x00\x90\x90\x90", 10, hProcess);
-            mem::PatchEx((BYTE*)(moduleBase + 0x27C6519), (BYTE*)"\xC7\x40\x2C\x02\x00\x00\x00\x90\x90", 9, hProcess);//Shotguns
-
-
-        }
-        else
-        {
-            mem::PatchEx((BYTE*)(moduleBase + 0x27B6353), (BYTE*)"\x89\x0C\x38\x44\x38\xAE\x68\x0E\x00\x00", 10, hProcess);
-            mem::PatchEx((BYTE*)(moduleBase + 0x27C6519), (BYTE*)"\x44\x08\x70\x2C\xE8\x5E\xB4\x00\x00", 9, hProcess);
-
+            if (patchedMain && patchedShotguns)
+            {
+                rapidPatchInitialized = true;
+                previousRapidEnabled = bRapid;
+            }
         }
 
-        if (bInstant)
-        {
-
-            mem::PatchEx((BYTE*)(moduleBase + 0x26279A5), (BYTE*)"\x0F\x8C", 2, hProcess);
-
-        }
-        else
-        {
-            mem::PatchEx((BYTE*)(moduleBase + 0x26279A5), (BYTE*)"\x0F\x8F", 2, hProcess);
-        }
+        static bool instantPatchInitialized = false;
+        static bool previousInstantEnabled = false;
+        PatchToggleBytesOnChange(
+            hProcess,
+            moduleBase + 0x26279A5,
+            bInstant,
+            instantPatchInitialized,
+            previousInstantEnabled,
+            "\x0F\x8C",
+            2,
+            "\x0F\x8F",
+            2);
 
 
 
@@ -1128,12 +1221,13 @@ int main(int, char**) {
             static SHORT prevF4State = 0;
 
             int N1 = 0;
-            ReadProcessMemory(hProcess, (LPCVOID)MWeaponAddr, &N1, sizeof(N1), nullptr);
+            if (CanPatchAddress(hProcess, MWeaponAddr))
+                ReadProcessMemory(hProcess, (LPCVOID)MWeaponAddr, &N1, sizeof(N1), nullptr);
             SHORT currentF3State = GetAsyncKeyState(VK_F3);
             if ((currentF3State & 0x8000) && !(prevF3State & 0x8000))
             {
                 N1--;
-                mem::PatchEx((BYTE*)MWeaponAddr, (BYTE*)&N1, sizeof(N1), hProcess);
+                PatchValue(hProcess, MWeaponAddr, N1);
             }
             prevF3State = currentF3State;
 
@@ -1141,7 +1235,7 @@ int main(int, char**) {
             if ((currentF4State & 0x8000) && !(prevF4State & 0x8000))
             {
                 N1++;
-                mem::PatchEx((BYTE*)MWeaponAddr, (BYTE*)&N1, sizeof(N1), hProcess);
+                PatchValue(hProcess, MWeaponAddr, N1);
             }
             prevF4State = currentF4State;
         }
@@ -1153,12 +1247,13 @@ int main(int, char**) {
             static SHORT prevF4State = 0;
 
             int N1 = 0;
-            ReadProcessMemory(hProcess, (LPCVOID)CamoAddr2, &N1, sizeof(N1), nullptr);
+            if (CanPatchAddress(hProcess, CamoAddr2))
+                ReadProcessMemory(hProcess, (LPCVOID)CamoAddr2, &N1, sizeof(N1), nullptr);
             SHORT currentF3State = GetAsyncKeyState(VK_F3);
             if ((currentF3State & 0x8000) && !(prevF3State & 0x8000))
             {
                 N1--;
-                mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&N1, sizeof(N1), hProcess);
+                PatchValue(hProcess, CamoAddr2, N1);
             }
             prevF3State = currentF3State;
 
@@ -1166,7 +1261,7 @@ int main(int, char**) {
             if ((currentF4State & 0x8000) && !(prevF4State & 0x8000))
             {
                 N1++;
-                mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&N1, sizeof(N1), hProcess);
+                PatchValue(hProcess, CamoAddr2, N1);
             }
             prevF4State = currentF4State;
         }
@@ -1177,29 +1272,39 @@ int main(int, char**) {
             if (GetAsyncKeyState(0x45))  // key is down
             {
                 int N1 = 1;
-                mem::PatchEx((BYTE*)NoclipAddr, (BYTE*)&N1, sizeof(N1), hProcess);
+                PatchValue(hProcess, NoclipAddr, N1);
             }
             else
             {
                 int N0 = 0;
-                mem::PatchEx((BYTE*)NoclipAddr, (BYTE*)&N0, sizeof(N0), hProcess);
+                PatchValue(hProcess, NoclipAddr, N0);
             }
         }
 
-        if (bHealth && GodAddr != 0) {
-            int God = 12297;
-            mem::PatchEx((BYTE*)GodAddr, (BYTE*)&God, sizeof(God), hProcess);
-        }
-        else
-        {
-            int God = 12296;
-            mem::PatchEx((BYTE*)GodAddr, (BYTE*)&God, sizeof(God), hProcess);
-        }
+        static bool healthPatchInitialized = false;
+        static bool previousHealthEnabled = false;
+        const int godEnabled = 12297;
+        const int godDisabled = 12296;
+        PatchToggleValueOnChange(
+            hProcess,
+            GodAddr,
+            bHealth,
+            healthPatchInitialized,
+            previousHealthEnabled,
+            godEnabled,
+            godDisabled);
 
+        static bool goldTU8EHealthResetApplied = false;
         if (bGoldTU8EHealth && GoldTU8EHealthAddr != 0) {
+            goldTU8EHealthResetApplied = false;
             const int uHealth = 13337;
-            Sleep(5);
-            mem::PatchEx((BYTE*)GoldTU8EHealthAddr, (BYTE*)&uHealth, sizeof(uHealth), hProcess);
+            static float lastGoldTU8EHealthPatch = 0.0f;
+            const float currentTime = static_cast<float>(ImGui::GetTime());
+            if (currentTime - lastGoldTU8EHealthPatch >= 0.1f)
+            {
+                PatchValue(hProcess, GoldTU8EHealthAddr, uHealth);
+                lastGoldTU8EHealthPatch = currentTime;
+            }
 
 
 
@@ -1216,7 +1321,7 @@ int main(int, char**) {
 
                 const std::string& currentTarget = targets[targetIndex];
 
-                mem::PatchEx((BYTE*)HookClanByte, (BYTE*)currentTarget.c_str(), static_cast<unsigned int>(currentTarget.size()), hProcess);
+                PatchBytes(hProcess, HookClanByte, currentTarget.c_str(), currentTarget.size());
 
                 lastCycleTime = currentTime;
             }
@@ -1235,7 +1340,7 @@ int main(int, char**) {
 
                 const std::string& currentTarget2 = targets2[targetIndex2];
 
-                mem::PatchEx((BYTE*)GoldTU8ENameAddr, (BYTE*)currentTarget2.c_str(), static_cast<unsigned int>(currentTarget2.size()), hProcess);
+                PatchBytes(hProcess, GoldTU8ENameAddr, currentTarget2.c_str(), currentTarget2.size());
 
                 lastCycleTime2 = currentTime2;
             }
@@ -1245,38 +1350,33 @@ int main(int, char**) {
         if (!bGoldTU8EHealth && GoldTU8EHealthAddr != 0)
         {
             int UHealth = 100;
-            mem::PatchEx((BYTE*)GoldTU8EHealthAddr, (BYTE*)&UHealth, sizeof(UHealth), hProcess);
+            if (!goldTU8EHealthResetApplied && PatchValue(hProcess, GoldTU8EHealthAddr, UHealth))
+                goldTU8EHealthResetApplied = true;
             //mem::PatchEx((BYTE*)(moduleBase + 0x1CFF64), (BYTE*)"\xC7\x86\x70\x02\x00\x00\x08\x00\x00\x00", 10, hProcess);
            // mem::PatchEx((BYTE*)(moduleBase + 0x2BA72F), (BYTE*)"\xFF\x48\x04", 3, hProcess);
         }
-
-
         if (bToggleMW && MWeaponAddr != 0)
         {
-            mem::PatchEx((BYTE*)MWeaponAddr, (BYTE*)&MWeaponId, sizeof(MWeaponId), hProcess);
+            PatchValue(hProcess, MWeaponAddr, MWeaponId);
         }
 
         if (bToggleQW && QWeaponAddr != 0)
         {
-            mem::PatchEx((BYTE*)QWeaponAddr, (BYTE*)&QWeaponId, sizeof(QWeaponId), hProcess);
+            PatchValue(hProcess, QWeaponAddr, QWeaponId);
         }
 
         if (bToggleWW && WWeaponAddr != 0)
         {
-            mem::PatchEx((BYTE*)WWeaponAddr, (BYTE*)&WWeaponId, sizeof(WWeaponId), hProcess);
+            PatchValue(hProcess, WWeaponAddr, WWeaponId);
         }
 
         if (bToggleEW && EWeaponAddr != 0)
         {
-            mem::PatchEx((BYTE*)EWeaponAddr, (BYTE*)&EWeaponId, sizeof(EWeaponId), hProcess);
+            PatchValue(hProcess, EWeaponAddr, EWeaponId);
         }
-
-
-
-
         if (bToggleScore && ScoreAddr != 0)
         {
-            mem::PatchEx((BYTE*)ScoreAddr, (BYTE*)&ScoreId, sizeof(ScoreId), hProcess);
+            PatchValue(hProcess, ScoreAddr, ScoreId);
         }
         else
         {

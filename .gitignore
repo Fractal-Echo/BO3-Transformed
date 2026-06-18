@@ -1,0 +1,31 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build output
+Debug/
+Release/
+x64/
+Win32/
+out/
+build/
+
+# Binaries and debug artifacts
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.obj
+*.idb
+*.ipdb
+*.iobj
+*.log
+
+# Local editor/OS noise
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
