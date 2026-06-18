@@ -27,5 +27,6 @@ build/
 # Local editor/OS noise
 .vscode/
 .idea/
+imgui.ini
 Thumbs.db
 Desktop.ini
