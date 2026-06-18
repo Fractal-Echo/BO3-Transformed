@@ -118,6 +118,12 @@ static std::vector<Weapon> moddedWeaponList_1 = {
 static int selectedWeaponIndex = 0;
 
 static std::vector<Weapon>* currentWeaponList = &weaponList;
+static constexpr int kMapIdDieRise = 1683975546;
+static constexpr int kMapIdTranzit = 1952411002;
+static constexpr uintptr_t kClanTagPatchOffset = 0x4;
+static constexpr uintptr_t kCamoBytePatchOffset = 23;
+static constexpr uintptr_t kTableCamoPatternOffset = 0x150;
+static constexpr uintptr_t kBankPatternOffset = 0x28;
 
 
 struct Camo {
@@ -150,6 +156,19 @@ static int selectedCamoIndex = 0;
 
 static bool CanPatchAddress(HANDLE process, uintptr_t address) {
     return process != nullptr && address != 0;
+}
+template <typename T>
+static bool ReadValue(HANDLE process, uintptr_t address, T& value) {
+    if (!CanPatchAddress(process, address))
+        return false;
+
+    SIZE_T bytesRead = 0;
+    return ReadProcessMemory(
+        process,
+        reinterpret_cast<LPCVOID>(address),
+        &value,
+        sizeof(value),
+        &bytesRead) && bytesRead == sizeof(value);
 }
 
 template <typename T>
@@ -235,6 +254,54 @@ bool PatchWeaponID(uintptr_t addr, int id, HANDLE hProcess) {
 bool PatchCamoID(uintptr_t addr2, int id, HANDLE hProcess) {
     return PatchValue(hProcess, addr2, id);
 }
+static bool TryReadMapId(HANDLE process, uintptr_t mapIdAddress, int& mapId) {
+    return ReadValue(process, mapIdAddress, mapId);
+}
+
+static bool IsSupportedMapId(int mapId) {
+    return mapId == kMapIdDieRise || mapId == kMapIdTranzit;
+}
+
+static std::vector<Weapon>* GetWeaponListForMapId(int mapId) {
+    switch (mapId) {
+    case kMapIdDieRise:
+        return &weaponList;
+    case kMapIdTranzit:
+        return &TranzitWeaponList_1;
+    default:
+        return nullptr;
+    }
+}
+
+static bool IsValidWeaponAddress(HANDLE process, uintptr_t weaponAddress) {
+    int currentWeaponId = 0;
+    return ReadValue(process, weaponAddress, currentWeaponId);
+}
+
+static uintptr_t ResolvePatternAddress(HANDLE process, const char* pattern, const char* mask, uintptr_t subtractOffset) {
+    const uintptr_t patternAddress = FindPatternEx(process, pattern, mask);
+    if (patternAddress == 0 || patternAddress < subtractOffset)
+        return 0;
+
+    return patternAddress - subtractOffset;
+}
+
+static uintptr_t ResolveClanTagAddress(HANDLE process) {
+    const uintptr_t patternAddress = FindPatternEx(process, "\x5B\x33\x33\x5D\x5E", "xxxxx");
+    if (patternAddress == 0)
+        return 0;
+
+    return patternAddress + kClanTagPatchOffset;
+}
+
+static uintptr_t ResolveCamoByteAddress(HANDLE process, DWORD processId, uintptr_t baseAddress) {
+    return FindPattern(
+        process,
+        processId,
+        baseAddress,
+        "\x00\x00\x00\x00\x00\x00\x00\xBD\x78\x50\x54\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x16",
+        "???????xxx????x????????x");
+}
 
 
 
@@ -289,6 +356,32 @@ DWORD procId;
 HANDLE hProcess;
 uintptr_t moduleBase = 0, HookLastByteAddr = 0, HookClanByte = 0, SigCamoAddr = 0, ModIdAddr = 0, TestAddr = 0, LeftPistolAddr = 0, AmmoBaseAddr = 0, NameAddr = 0, NameBaseAddr = 0, MapIdAddr = 0, ConnectionIDAddr = 0, WeaponInHandAddr = 0, TableBase = 0, SvCheatsAddr = 0, DeveloperAddr = 0, TWeaponAddr = 0, LocalPlayerOffset = 0, ZombiesCountAddr = 0, CamoAddr1 = 0, CamoAddr2 = 0, CamoAddr3 = 0, CamoAddr4 = 0, CamoAddr5 = 0, XCoordAddr = 0, YCoordAddr = 0, ZCoordAddr = 0, NoclipAddr = 0, GoldTU8EHealthAddr = 0, GoldTU8EBaseAddr = 0, GoldTU8ENameAddr = 0, GodBaseAddr = 0, GodAddr = 0, MWeaponAddr = 0, QWeaponAddr = 0, WWeaponAddr = 0, EWeaponAddr = 0, ScoreAddr = 0, ScoreBaseAddr = 0, ClassCamoBaseAddr = 0, ClassCamoAddr = 0;
 uintptr_t TestAddr2 = 0, TableCamoAddr = 0, BankAddr = 0, EntityList = 0, DistanceBetween = 0, HealthAddr = 0;
+static void ResolveRuntimeSignatures(HANDLE process, DWORD processId, uintptr_t baseAddress) {
+    if (!CanPatchAddress(process, baseAddress))
+        return;
+
+    if (HookClanByte == 0)
+        HookClanByte = ResolveClanTagAddress(process);
+
+    if (HookLastByteAddr == 0)
+        HookLastByteAddr = ResolveCamoByteAddress(process, processId, baseAddress);
+
+    if (TableCamoAddr == 0) {
+        TableCamoAddr = ResolvePatternAddress(
+            process,
+            "\xCD\x2C\xA8\x44\xAC\x4C\xB2\x43\xBE\xFF\x74\x43",
+            "xxxxxxxxxxxx",
+            kTableCamoPatternOffset);
+    }
+
+    if (BankAddr == 0) {
+        BankAddr = ResolvePatternAddress(
+            process,
+            "\x9C\x50\xE5\xCB\x00\x00\x00\x00",
+            "xxxxxxxx",
+            kBankPatternOffset);
+    }
+}
 
 
 static void glfw_error_callback(int error, const char* description) {
@@ -624,31 +717,26 @@ int main(int, char**) {
             */
 
             int currentMapId = 0;
-            if (hProcess && MapIdAddr != 0) {
-                ReadProcessMemory(hProcess, (LPCVOID)MapIdAddr, &currentMapId, sizeof(currentMapId), nullptr);
-
-                switch (currentMapId) {
-                case 1683975546: // Die Rise
-                    currentWeaponList = &weaponList;
-                    break;
-                case 1952411002: // Tranzit
-                    currentWeaponList = &TranzitWeaponList_1;
-                    break;
-                default:
-                    currentWeaponList = &weaponList;
-                    break;
-                }
-            }
-
+            const bool hasMapId = TryReadMapId(hProcess, MapIdAddr, currentMapId);
+            const bool hasSupportedMapId = hasMapId && IsSupportedMapId(currentMapId);
+            std::vector<Weapon>* mapWeaponList = hasSupportedMapId ? GetWeaponListForMapId(currentMapId) : nullptr;
+            currentWeaponList = mapWeaponList != nullptr ? mapWeaponList : &weaponList;
             if (currentWeaponList == nullptr || currentWeaponList->empty()) {
                 currentWeaponList = &weaponList;
             }
             if (selectedWeaponIndex < 0 || selectedWeaponIndex >= static_cast<int>(currentWeaponList->size())) {
                 selectedWeaponIndex = 0;
             }
+            const bool hasValidWeaponAddress = IsValidWeaponAddress(hProcess, QWeaponAddr);
 
             ImGui::Text("Weapon Selector");
-            if (ImGui::BeginCombo("##WeaponSelector", (*currentWeaponList)[selectedWeaponIndex].name)) {
+            if (!hasSupportedMapId) {
+                ImGui::TextDisabled("Waiting for Tranzit or Die Rise map ID");
+            }
+            else if (!hasValidWeaponAddress) {
+                ImGui::TextDisabled("Waiting for valid weapon address");
+            }
+            else if (ImGui::BeginCombo("##WeaponSelector", (*currentWeaponList)[selectedWeaponIndex].name)) {
                 for (int i = 0; i < static_cast<int>(currentWeaponList->size()); ++i) {
                     bool isSelected = (selectedWeaponIndex == i);
                     if (ImGui::Selectable((*currentWeaponList)[i].name, isSelected)) {
@@ -876,75 +964,7 @@ int main(int, char**) {
 
 
 
-                    // Pattern 1
-                    /*
-                    const BYTE pattern[] = { 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xBD,0x78,0x50,0x54,0x00,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x16 };
-                    const char mask[] = "???????xxx????x????????x";
-
-
-                    // Find the first byte of this pattern
-                    HookLastByteAddr = FindPattern(hProcess, procId, moduleBase, pattern, mask);
-
-                    */
-                    /*
-                        HookLastByteAddr = FindPattern(hProcess, procId, moduleBase,
-                        "\x00\x00\x00\x00\x00\x00\x00\xBD\x78\x50\x54\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x16",
-                        "???????xxx????x????????x");
-                    */
-
-
-
-
-                   // HookClanByte = FindPatternEx(hProcess, "\xC4\x03\x00\x00\x00\x00\x74\xBA\x1E\x03", "xxxxxxxxxx");
-                   // HookClanByte = FindPatternEx(hProcess, "\x5B\x33\x33\x5D\x5E", "xxxxx");
-
-
-
-
-                    //placeholder = FindPattern(hProcess, procId, moduleBase, "\xC4\x03\x00\x00\x00\x00\x74\xBA\x1E\x03", "xxxxxxxxxx");
-                    //HookClanByte = FindPatternEx(hProcess, "\x5E\x33\x33\x33\x5D\x5E", "xxxxxx");
-                    //HookClanByte = FindPatternEx(hProcess, "\x5B\x33\x33\x5D\x5E", "xxxxx");
-
-                    // If the pattern is found, add an offset to access the second byte (assuming offset is correct)
-
-
-                    //11 00 00 00 00 00 00 00 57 98 68 4F 5E
-
-                   /*
-                   HookClanByte = FindPatternEx(hProcess, "\x5B\x33\x33\x5D\x5E", "xxxxx");
-
-                   if (HookClanByte != 0) {
-                       //  HookClanByte += 0x116;  // use hex offset
-
-                       HookClanByte += 0x4;
-
-
-                   }
-                   */
-
-               // TableCamoAddr = FindPatternEx(hProcess, "\xCD\x2C\xA8\x44\xAC\x4C\xB2\x43\xBE\xFF\x74\x43", "xxxxxxxxxxxx");
-               //TableCamoAddr = sig::FindPatternEx(hProcess, "\xCD\x2C\xA8\x44\xAC\x4C\xB2\x43\xBE\xFF\x74\x43", "x?x?x?xx");
-
-                    if (TableCamoAddr != 0) {
-                        //TableCamoAddr -= 0x16C;
-                        TableCamoAddr -= 0x150;
-                    }
-
-
-                       BankAddr = FindPatternEx(
-                          hProcess,
-                          "\x9C\x50\xE5\xCB\x00\x00\x00\x00",
-                          "xxxxxxxx"
-                      );
-                  
-
-                  // BankAddr = sig::FindPatternEx(hProcess, "\x9C\x50\xE5\xCB\x00\x00\x00\x00", "xxxxxx");
-
-                    if (BankAddr != 0) {
-                        BankAddr -= 0x28;
-
-                    }
-
+                    ResolveRuntimeSignatures(hProcess, procId, moduleBase);
                     //5B F5 ?? ?? ?? ?? ?? ?? 06 ?? ?? ?? F7 7F
 
 
@@ -969,6 +989,7 @@ int main(int, char**) {
                 std::cout << "ClanTag sig test: " << std::hex << HookClanByte << std::endl;
                 std::cout << "ClanTag sig test2: " << std::hex << TestAddr << std::endl;
                 std::cout << "Table Sig test 1" << std::hex << TableCamoAddr << std::endl;
+                std::cout << "Bank Sig test 1" << std::hex << BankAddr << std::endl;
 
 
 
@@ -980,6 +1001,20 @@ int main(int, char**) {
         }
 
 
+        static float lastRuntimeSignatureRetry = 0.0f;
+        const bool hasUnresolvedRuntimeSignature =
+            HookClanByte == 0 ||
+            HookLastByteAddr == 0 ||
+            TableCamoAddr == 0 ||
+            BankAddr == 0;
+
+        if (hasUnresolvedRuntimeSignature && hProcess && moduleBase != 0) {
+            const float currentTime = static_cast<float>(ImGui::GetTime());
+            if (currentTime - lastRuntimeSignatureRetry >= 2.0f) {
+                ResolveRuntimeSignatures(hProcess, procId, moduleBase);
+                lastRuntimeSignatureRetry = currentTime;
+            }
+        }
         static bool ammoPatchApplied = false;
         if (bAmmo && !ammoPatchApplied)
         {
@@ -1028,55 +1063,11 @@ int main(int, char**) {
             "\x74\x06",
             2);
 
-        if (bClan)
-        {
-
-
-
-            /*
-            //size_t Offset = 116;
-            BYTE camoValue = 0x42;
-           // mem::PatchEx((BYTE*)(HookClanByte ), &camoValue, sizeof(camoValue), hProcess);
-            mem::WriteStringEx((BYTE*)(HookClanByte), "3arc", hProcess);
-            
-            
-        */
-
-
-            /*
-            BYTE targetByte = 0x44;
-            BYTE buffer[256] = { 0 };
-
-            SIZE_T bytesRead = 0;
-            if (ReadProcessMemory(hProcess, (LPCVOID)(HookClanByte + targetByte), buffer, sizeof(buffer), &bytesRead)) {
-                for (size_t i = 0; i < bytesRead; ++i) {
-                    if (buffer[i] == targetByte) {
-                        std::cout << "Found 0x44 at offset " << (targetByte + i) << std::endl;
-                        break;
-                    }
-                }
-            }
-            else {
-                std::cerr << "Failed to read process memory. Error: " << GetLastError() << std::endl;
-            }
-            */
-            
-
-            // mem::WriteStringEx((BYTE*)(HookClanByte + Offset), "^133", hProcess);
-        }
-        else
-        {
-
-        }
-
-        
-
         ///new signature test
-        if (bCamo)
+        if (bCamo && HookLastByteAddr != 0)
         {
-            const size_t lastByteOffset = 23;
             BYTE Galaxy = 0x7D;
-            PatchValue(hProcess, HookLastByteAddr + lastByteOffset, Galaxy);
+            PatchValue(hProcess, HookLastByteAddr + kCamoBytePatchOffset, Galaxy);
         }
 
 
@@ -1155,61 +1146,6 @@ int main(int, char**) {
             2,
             "\x0F\x8F",
             2);
-
-
-
-
-
-        // Add Logic to keep this off if map id changes  7/20/25 Added
-
-        ///*
-
-        /*
-        int currentMapId = 0;
-        if (hProcess && MapIdAddr != 0) {
-            ReadProcessMemory(hProcess, (LPCVOID)MapIdAddr, &currentMapId, sizeof(currentMapId), nullptr);
-
-            switch (currentMapId) {
-            case 1683975546: // Die Rise
-                /*
-                if (!bRewardGiven)
-                {
-                    if (ReadProcessMemory(hProcess, (LPCVOID)GoldTU8EHealthAddr, &GoldTU8EHealth, sizeof(GoldTU8EHealth), nullptr))
-                    {
-                        if (GoldTU8EHealth == 0) // GoldTU8E Dead
-                        {
-                            // Reward: weapon upgrade
-                            int R1 = 264;
-                            mem::PatchEx((BYTE*)QWeaponAddr, (BYTE*)&R1, sizeof(R1), hProcess);
-
-                            // Reward: gold camo
-                            int camoVal = 15;
-                            mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&camoVal, sizeof(camoVal), hProcess);
-
-                            bRewardGiven = true; // Lock forever
-                        }
-                    }
-
-
-                }
-                break;
-            case 1952411002: // Tranzit
-
-                break;
-            default:
-                currentWeaponList = &weaponList;
-                break;
-            }
-        }
-        */
-
-
-
-
-
-
-
-        //*/
 
 
 
@@ -1382,23 +1318,6 @@ int main(int, char**) {
         {
 
         }
-        //Recode this for lobby id detection but it serves it's purpose
-        bool ClanFound = false;
-
-        if (bClan && !ClanFound)
-        {
-            /*
-            HookClanByte = FindPatternEx(hProcess, "\x5B\x33\x33\x5D\x5E", "xxxxx");
-
-            if (HookClanByte != 0)
-            {
-                HookClanByte += 0x4;
-                ClanFound = true;
-            }
-            */
-        }
-
-
         // bool isInMenu = true;   // optional flag if you later detect menu vs in-game
 
         ImGui::Render();

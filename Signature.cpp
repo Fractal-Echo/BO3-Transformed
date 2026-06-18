@@ -12,6 +12,38 @@
 static std::unordered_map<std::string, uintptr_t> g_PatternCache;
 static std::mutex g_PatternCacheMutex;
 
+static const uint8_t* FindPatternScalar(
+    const uint8_t* data,
+    size_t size,
+    const uint8_t* pattern,
+    const char* mask,
+    size_t patternLen)
+{
+    if (!data || !pattern || !mask)
+        return nullptr;
+
+    if (patternLen == 0 || size < patternLen)
+        return nullptr;
+
+    for (size_t i = 0; i + patternLen <= size; i++)
+    {
+        bool match = true;
+
+        for (size_t j = 0; j < patternLen; j++)
+        {
+            if (mask[j] != '?' && data[i + j] != pattern[j])
+            {
+                match = false;
+                break;
+            }
+        }
+
+        if (match)
+            return data + i;
+    }
+
+    return nullptr;
+}
 
 static const uint8_t* FindPatternSIMD(
     const uint8_t* data,
@@ -26,10 +58,10 @@ static const uint8_t* FindPatternSIMD(
     if (patternLen == 0 || size < patternLen)
         return nullptr;
 
-    // This SIMD scanner uses the first byte as the anchor.
-    // Therefore the first mask byte must be fixed, not '?'.
+    // SIMD uses the first byte as the anchor. Patterns with leading wildcards
+    // still need to work, so fall back to the scalar scanner for those.
     if (mask[0] == '?')
-        return nullptr;
+        return FindPatternScalar(data, size, pattern, mask, patternLen);
 
     uint8_t first = pattern[0];
 
@@ -358,4 +390,3 @@ void ClearPatternCache()
     std::lock_guard<std::mutex> lock(g_PatternCacheMutex);
     g_PatternCache.clear();
 }
-
