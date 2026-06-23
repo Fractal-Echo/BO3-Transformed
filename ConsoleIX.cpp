@@ -690,10 +690,8 @@ int main(int, char**) {
     ImGui_ImplOpenGL3_Init("#version 130");
 
     bool bMenuVisible = true;
-    ShowMenu(window);
 
     while (!glfwWindowShouldClose(window)) {
-        ApplyMenuInputState(window, bMenuVisible);
 
         glfwPollEvents();
 
