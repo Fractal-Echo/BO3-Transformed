@@ -177,7 +177,7 @@ static bool PatchValue(HANDLE process, uintptr_t address, const T& value) {
     if (!CanPatchAddress(process, address))
         return false;
 
-    return mem::PatchEx(reinterpret_cast<BYTE*>(address),
+    return mem::TryPatchEx(reinterpret_cast<BYTE*>(address),
         reinterpret_cast<const BYTE*>(&value),
         sizeof(value),
         process);
@@ -187,7 +187,7 @@ static bool PatchBytes(HANDLE process, uintptr_t address, const char* bytes, siz
     if (!CanPatchAddress(process, address) || bytes == nullptr || size == 0)
         return false;
 
-    return mem::PatchEx(reinterpret_cast<BYTE*>(address),
+    return mem::TryPatchEx(reinterpret_cast<BYTE*>(address),
         reinterpret_cast<const BYTE*>(bytes),
         size,
         process);
@@ -197,7 +197,7 @@ static bool WriteString(HANDLE process, uintptr_t address, const char* value) {
     if (!CanPatchAddress(process, address) || value == nullptr)
         return false;
 
-    return mem::WriteStringEx(reinterpret_cast<BYTE*>(address), value, process);
+    return mem::TryWriteStringEx(reinterpret_cast<BYTE*>(address), value, process);
 }
 
 template <typename T>
