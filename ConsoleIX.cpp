@@ -693,6 +693,7 @@ int main(int, char**) {
     ShowMenu(window);
 
     while (!glfwWindowShouldClose(window)) {
+        ApplyMenuInputState(window, bMenuVisible);
 
         glfwPollEvents();
 
