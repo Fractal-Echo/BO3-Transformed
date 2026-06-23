@@ -10,14 +10,16 @@ bool mem::TryPatchEx(BYTE* dst, const BYTE* src, size_t size, HANDLE hProcess)
 		return false;
 
 	DWORD oldprotect = 0;
-	if (!VirtualProtectEx(hProcess, dst, size, PAGE_EXECUTE_READWRITE, &oldprotect))
-		return false;
+	const bool changedProtection = VirtualProtectEx(hProcess, dst, size, PAGE_EXECUTE_READWRITE, &oldprotect) != FALSE;
 
 	SIZE_T bytesWritten = 0;
 	const bool wrote = WriteProcessMemory(hProcess, dst, src, size, &bytesWritten) && bytesWritten == size;
 
-	DWORD ignored = 0;
-	VirtualProtectEx(hProcess, dst, size, oldprotect, &ignored);
+	if (changedProtection) {
+		DWORD ignored = 0;
+		VirtualProtectEx(hProcess, dst, size, oldprotect, &ignored);
+	}
+
 	return wrote;
 }
 bool mem::TryNopEx(BYTE* dst, size_t size, HANDLE hProcess)

@@ -4,13 +4,18 @@
 
 void ShowMenu(GLFWwindow* window)
 {
+	if (!window)
+		return;
 
-	"Showing Menu\n";
-	glfwSetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH, false);
+	glfwSetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE);
+	glfwShowWindow(window);
+	glfwFocusWindow(window);
 }
 
 void HideMenu(GLFWwindow* window)
 {
-	  "Hiding Menu\n";
-	glfwSetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH, true);
+	if (!window)
+		return;
+
+	glfwSetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
 }
