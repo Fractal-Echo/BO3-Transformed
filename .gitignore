@@ -27,5 +27,10 @@ build/
 # Local editor/OS noise
 .vscode/
 .idea/
+imgui.ini
 Thumbs.db
 Desktop.ini
+
+# Reversa
+.reversa/config.user.toml
+_reversa_sdd/

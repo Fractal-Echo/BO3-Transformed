@@ -17,10 +17,14 @@ The executable target is Windows-only. `ConsoleIX.vcxproj` uses WinAPI, OpenGL, 
 
 Recommended build path:
 
-1. Open `ConsoleIX.vcxproj` in Visual Studio 2022.
-2. Select `Release | x64`.
-3. Build with the MSVC toolset configured in the project file.
-4. Run the output as administrator when attaching to `BlackOps3.exe`.
+1. Install Visual Studio Build Tools 2022 with the C++ workload.
+2. From Windows PowerShell, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1
+```
+
+3. Run the output as administrator when attaching to `BlackOps3.exe`.
 
 WSL is not currently configured as the compiler environment for this project. Treat WSL as the clean repo/build-space staging area unless a dedicated cross-build setup is added later.
 
