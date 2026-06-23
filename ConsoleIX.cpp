@@ -153,6 +153,7 @@ static std::vector<Camo> CamoList = {
 
 
 static int selectedCamoIndex = 0;
+static uint32_t gTargetSessionId = 0;
 
 static bool CanPatchAddress(HANDLE process, uintptr_t address) {
     return process != nullptr && address != 0;
@@ -176,30 +177,27 @@ static bool PatchValue(HANDLE process, uintptr_t address, const T& value) {
     if (!CanPatchAddress(process, address))
         return false;
 
-    mem::PatchEx(reinterpret_cast<BYTE*>(address),
-        reinterpret_cast<BYTE*>(const_cast<T*>(&value)),
+    return mem::PatchEx(reinterpret_cast<BYTE*>(address),
+        reinterpret_cast<const BYTE*>(&value),
         sizeof(value),
         process);
-    return true;
 }
 
 static bool PatchBytes(HANDLE process, uintptr_t address, const char* bytes, size_t size) {
     if (!CanPatchAddress(process, address) || bytes == nullptr || size == 0)
         return false;
 
-    mem::PatchEx(reinterpret_cast<BYTE*>(address),
-        reinterpret_cast<BYTE*>(const_cast<char*>(bytes)),
+    return mem::PatchEx(reinterpret_cast<BYTE*>(address),
+        reinterpret_cast<const BYTE*>(bytes),
         size,
         process);
-    return true;
 }
 
 static bool WriteString(HANDLE process, uintptr_t address, const char* value) {
     if (!CanPatchAddress(process, address) || value == nullptr)
         return false;
 
-    mem::WriteStringEx(reinterpret_cast<BYTE*>(address), value, process);
-    return true;
+    return mem::WriteStringEx(reinterpret_cast<BYTE*>(address), value, process);
 }
 
 template <typename T>
@@ -209,16 +207,24 @@ static bool PatchToggleValueOnChange(
     bool enabled,
     bool& initialized,
     bool& previousEnabled,
+    uintptr_t& previousAddress,
+    uint32_t& previousSessionId,
     const T& enabledValue,
     const T& disabledValue) {
-    if (initialized && previousEnabled == enabled)
+    if (initialized &&
+        previousEnabled == enabled &&
+        previousAddress == address &&
+        previousSessionId == gTargetSessionId) {
         return true;
+    }
 
     if (!PatchValue(process, address, enabled ? enabledValue : disabledValue))
         return false;
 
     initialized = true;
     previousEnabled = enabled;
+    previousAddress = address;
+    previousSessionId = gTargetSessionId;
     return true;
 }
 
@@ -228,12 +234,18 @@ static bool PatchToggleBytesOnChange(
     bool enabled,
     bool& initialized,
     bool& previousEnabled,
+    uintptr_t& previousAddress,
+    uint32_t& previousSessionId,
     const char* enabledBytes,
     size_t enabledSize,
     const char* disabledBytes,
     size_t disabledSize) {
-    if (initialized && previousEnabled == enabled)
+    if (initialized &&
+        previousEnabled == enabled &&
+        previousAddress == address &&
+        previousSessionId == gTargetSessionId) {
         return true;
+    }
 
     if (!PatchBytes(process,
         address,
@@ -244,6 +256,8 @@ static bool PatchToggleBytesOnChange(
 
     initialized = true;
     previousEnabled = enabled;
+    previousAddress = address;
+    previousSessionId = gTargetSessionId;
     return true;
 }
 
@@ -260,6 +274,22 @@ static bool TryReadMapId(HANDLE process, uintptr_t mapIdAddress, int& mapId) {
 
 static bool IsSupportedMapId(int mapId) {
     return mapId == kMapIdDieRise || mapId == kMapIdTranzit;
+}
+
+static bool ShouldScanBankAddress(int mapId) {
+    return mapId == kMapIdDieRise || mapId == kMapIdTranzit;
+}
+
+static bool ShouldScanTableCamoAddress(int mapId) {
+    return mapId == kMapIdDieRise;
+}
+
+static bool CanPatchBankAddress(int mapId, uintptr_t bankAddress) {
+    return ShouldScanBankAddress(mapId) && bankAddress != 0;
+}
+
+static bool CanPatchTableCamoAddress(int mapId, uintptr_t tableCamoAddress) {
+    return ShouldScanTableCamoAddress(mapId) && tableCamoAddress != 0;
 }
 
 static std::vector<Weapon>* GetWeaponListForMapId(int mapId) {
@@ -356,7 +386,77 @@ DWORD procId;
 HANDLE hProcess;
 uintptr_t moduleBase = 0, HookLastByteAddr = 0, HookClanByte = 0, SigCamoAddr = 0, ModIdAddr = 0, TestAddr = 0, LeftPistolAddr = 0, AmmoBaseAddr = 0, NameAddr = 0, NameBaseAddr = 0, MapIdAddr = 0, ConnectionIDAddr = 0, WeaponInHandAddr = 0, TableBase = 0, SvCheatsAddr = 0, DeveloperAddr = 0, TWeaponAddr = 0, LocalPlayerOffset = 0, ZombiesCountAddr = 0, CamoAddr1 = 0, CamoAddr2 = 0, CamoAddr3 = 0, CamoAddr4 = 0, CamoAddr5 = 0, XCoordAddr = 0, YCoordAddr = 0, ZCoordAddr = 0, NoclipAddr = 0, GoldTU8EHealthAddr = 0, GoldTU8EBaseAddr = 0, GoldTU8ENameAddr = 0, GodBaseAddr = 0, GodAddr = 0, MWeaponAddr = 0, QWeaponAddr = 0, WWeaponAddr = 0, EWeaponAddr = 0, ScoreAddr = 0, ScoreBaseAddr = 0, ClassCamoBaseAddr = 0, ClassCamoAddr = 0;
 uintptr_t TestAddr2 = 0, TableCamoAddr = 0, BankAddr = 0, EntityList = 0, DistanceBetween = 0, HealthAddr = 0;
-static void ResolveRuntimeSignatures(HANDLE process, DWORD processId, uintptr_t baseAddress) {
+
+static bool IsTargetProcessAlive(HANDLE process) {
+    if (!process)
+        return false;
+
+    DWORD exitCode = 0;
+    return GetExitCodeProcess(process, &exitCode) && exitCode == STILL_ACTIVE;
+}
+
+static void StopRainbowThreads() {
+    stopThread.store(true);
+    stopThread2.store(true);
+    stopThread3.store(true);
+
+    if (rainbowThread.joinable())
+        rainbowThread.join();
+    if (rainbowThread2.joinable())
+        rainbowThread2.join();
+    if (rainbowThread3.joinable())
+        rainbowThread3.join();
+
+    bRainbow = false;
+    bRainbow2 = false;
+    bRainbow3 = false;
+}
+
+static void ResetRuntimeAddresses() {
+    moduleBase = HookLastByteAddr = HookClanByte = SigCamoAddr = ModIdAddr = TestAddr = LeftPistolAddr = AmmoBaseAddr = NameAddr = NameBaseAddr = MapIdAddr = ConnectionIDAddr = WeaponInHandAddr = TableBase = SvCheatsAddr = DeveloperAddr = TWeaponAddr = LocalPlayerOffset = ZombiesCountAddr = CamoAddr1 = CamoAddr2 = CamoAddr3 = CamoAddr4 = CamoAddr5 = XCoordAddr = YCoordAddr = ZCoordAddr = NoclipAddr = GoldTU8EHealthAddr = GoldTU8EBaseAddr = GoldTU8ENameAddr = GodBaseAddr = GodAddr = MWeaponAddr = QWeaponAddr = WWeaponAddr = EWeaponAddr = ScoreAddr = ScoreBaseAddr = ClassCamoBaseAddr = ClassCamoAddr = 0;
+    TestAddr2 = TableCamoAddr = BankAddr = EntityList = DistanceBetween = HealthAddr = 0;
+}
+
+static void CloseTargetProcess() {
+    StopRainbowThreads();
+
+    if (hProcess) {
+        CloseHandle(hProcess);
+        hProcess = nullptr;
+    }
+
+    procId = 0;
+    ResetRuntimeAddresses();
+    ++gTargetSessionId;
+    bBank = false;
+}
+
+static void SyncMapSpecificRuntimeAddresses(bool hasMapId, int mapId) {
+    static bool hadPreviousMapId = false;
+    static int previousMapId = 0;
+
+    if (!hasMapId) {
+        hadPreviousMapId = false;
+        BankAddr = 0;
+        TableCamoAddr = 0;
+        return;
+    }
+
+    if (!hadPreviousMapId || previousMapId != mapId) {
+        BankAddr = 0;
+        TableCamoAddr = 0;
+        previousMapId = mapId;
+        hadPreviousMapId = true;
+    }
+
+    if (!ShouldScanBankAddress(mapId))
+        BankAddr = 0;
+
+    if (!ShouldScanTableCamoAddress(mapId))
+        TableCamoAddr = 0;
+}
+
+static void ResolveRuntimeSignatures(HANDLE process, DWORD processId, uintptr_t baseAddress, int mapId) {
     if (!CanPatchAddress(process, baseAddress))
         return;
 
@@ -366,7 +466,7 @@ static void ResolveRuntimeSignatures(HANDLE process, DWORD processId, uintptr_t 
     if (HookLastByteAddr == 0)
         HookLastByteAddr = ResolveCamoByteAddress(process, processId, baseAddress);
 
-    if (TableCamoAddr == 0) {
+    if (ShouldScanTableCamoAddress(mapId) && TableCamoAddr == 0) {
         TableCamoAddr = ResolvePatternAddress(
             process,
             "\xCD\x2C\xA8\x44\xAC\x4C\xB2\x43\xBE\xFF\x74\x43",
@@ -374,7 +474,7 @@ static void ResolveRuntimeSignatures(HANDLE process, DWORD processId, uintptr_t 
             kTableCamoPatternOffset);
     }
 
-    if (BankAddr == 0) {
+    if (ShouldScanBankAddress(mapId) && BankAddr == 0) {
         BankAddr = ResolvePatternAddress(
             process,
             "\x9C\x50\xE5\xCB\x00\x00\x00\x00",
@@ -404,7 +504,11 @@ void RainbowCycleLoop2() {
     while (!stopThread2.load()) {
         for (int RainbowValue2 = 1; RainbowValue2 <= 126; ++RainbowValue2) {
             if (stopThread2.load()) break;
-            PatchValue(hProcess, TableCamoAddr, RainbowValue2);
+            int currentMapId = 0;
+            if (TryReadMapId(hProcess, MapIdAddr, currentMapId) &&
+                CanPatchTableCamoAddress(currentMapId, TableCamoAddr)) {
+                PatchValue(hProcess, TableCamoAddr, RainbowValue2);
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Rainbow Delay //100 MS original value
         }
     }
@@ -594,9 +698,18 @@ int main(int, char**) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        if (hProcess && !IsTargetProcessAlive(hProcess))
+            CloseTargetProcess();
+
         DrawTextWatermark("X v0.1.0");
         DrawDebugWatermark(hProcess, MWeaponAddr);
         DrawDebugWatermark2(hProcess, CamoAddr2);
+
+        int frameMapId = 0;
+        const bool hasFrameMapId = TryReadMapId(hProcess, MapIdAddr, frameMapId);
+        SyncMapSpecificRuntimeAddresses(hasFrameMapId, frameMapId);
+        const bool canPatchBankAddress = hasFrameMapId && CanPatchBankAddress(frameMapId, BankAddr);
+        const bool canPatchTableCamoAddress = hasFrameMapId && CanPatchTableCamoAddress(frameMapId, TableCamoAddr);
 
 
 
@@ -664,7 +777,7 @@ int main(int, char**) {
             bToggleScore = (ImGui::IsKeyPressed(ImGuiKey_Enter) && ImGui::IsItemFocused());
 
 
-            if (ImGui::Button("Max Bank"))
+            if (ImGui::Button("Max Bank") && canPatchBankAddress)
             {
                 bBank = !bBank;
 
@@ -674,13 +787,28 @@ int main(int, char**) {
 
 
 
-            if (bBank)
-            {
-                PatchValue(hProcess, BankAddr, m1);
+            static bool bankPatchInitialized = false;
+            static bool previousBankEnabled = false;
+            static uintptr_t previousBankAddress = 0;
+            static uint32_t previousBankSessionId = 0;
+            if (!canPatchBankAddress) {
+                bBank = false;
+                bankPatchInitialized = false;
+                previousBankEnabled = false;
+                previousBankAddress = 0;
+                previousBankSessionId = 0;
             }
-            else
-            {
-                PatchValue(hProcess, BankAddr, m0);
+            else {
+                PatchToggleValueOnChange(
+                    hProcess,
+                    BankAddr,
+                    bBank,
+                    bankPatchInitialized,
+                    previousBankEnabled,
+                    previousBankAddress,
+                    previousBankSessionId,
+                    m1,
+                    m0);
             }
 
             /*
@@ -855,7 +983,15 @@ int main(int, char**) {
             }
 
 
-            if (ImGui::Button("Toggle Rainbow Table Camo")) {
+            if (!canPatchTableCamoAddress && bRainbow2) {
+                bRainbow2 = false;
+                stopThread2.store(true);
+                if (rainbowThread2.joinable()) {
+                    rainbowThread2.join();
+                }
+            }
+
+            if (ImGui::Button("Toggle Rainbow Table Camo") && canPatchTableCamoAddress) {
                 bRainbow2 = !bRainbow2;
                 if (bRainbow2) {
                     stopThread2.store(false);
@@ -911,11 +1047,23 @@ int main(int, char**) {
         }
 
         if (procId == 0) {
-            procId = GetProcId(L"BlackOps3.exe");
+            static float lastProcessSearch = -2.0f;
+            const float currentTime = static_cast<float>(ImGui::GetTime());
+            if (currentTime - lastProcessSearch >= 2.0f) {
+                lastProcessSearch = currentTime;
+                procId = GetProcId(L"BlackOps3.exe");
+            }
+
             if (procId != 0) {
                 hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, procId);
                 if (hProcess) {
+                    ResetRuntimeAddresses();
                     moduleBase = GetModuleBaseAddress(procId, L"BlackOps3.exe");
+                    if (moduleBase == 0) {
+                        CloseTargetProcess();
+                    }
+                    else {
+                    ++gTargetSessionId;
                     EntityList = moduleBase + 0x7DD48D8;
                     DistanceBetween = 0x3088;
                     HealthAddr = FindDMAAddy(hProcess, HealthAddr, { 0x2C8 });
@@ -964,7 +1112,10 @@ int main(int, char**) {
 
 
 
-                    ResolveRuntimeSignatures(hProcess, procId, moduleBase);
+                    int initialMapId = 0;
+                    const bool hasInitialMapId = TryReadMapId(hProcess, MapIdAddr, initialMapId);
+                    SyncMapSpecificRuntimeAddresses(hasInitialMapId, initialMapId);
+                    ResolveRuntimeSignatures(hProcess, procId, moduleBase, initialMapId);
                     //5B F5 ?? ?? ?? ?? ?? ?? 06 ?? ?? ?? F7 7F
 
 
@@ -976,6 +1127,10 @@ int main(int, char**) {
 
 
                     //GoldTU8E's name base = blackops3.exe+37C49E0
+                    }
+                }
+                else {
+                    procId = 0;
                 }
 
 
@@ -1002,21 +1157,24 @@ int main(int, char**) {
 
 
         static float lastRuntimeSignatureRetry = 0.0f;
+        const bool shouldScanTableCamoAddress = hasFrameMapId && ShouldScanTableCamoAddress(frameMapId);
+        const bool shouldScanBankAddress = hasFrameMapId && ShouldScanBankAddress(frameMapId);
         const bool hasUnresolvedRuntimeSignature =
             HookClanByte == 0 ||
             HookLastByteAddr == 0 ||
-            TableCamoAddr == 0 ||
-            BankAddr == 0;
+            (shouldScanTableCamoAddress && TableCamoAddr == 0) ||
+            (shouldScanBankAddress && BankAddr == 0);
 
         if (hasUnresolvedRuntimeSignature && hProcess && moduleBase != 0) {
             const float currentTime = static_cast<float>(ImGui::GetTime());
             if (currentTime - lastRuntimeSignatureRetry >= 2.0f) {
-                ResolveRuntimeSignatures(hProcess, procId, moduleBase);
+                ResolveRuntimeSignatures(hProcess, procId, moduleBase, frameMapId);
                 lastRuntimeSignatureRetry = currentTime;
             }
         }
         static bool ammoPatchApplied = false;
-        if (bAmmo && !ammoPatchApplied)
+        static uint32_t ammoPatchSessionId = 0;
+        if (bAmmo && (!ammoPatchApplied || ammoPatchSessionId != gTargetSessionId))
         {
             const bool patchedAmmo = PatchBytes(hProcess, moduleBase + 0x27C8234, "\xC7\x84\x83\x84\x06\x00\x00\x67\x02\x00\x00\x90\x90\x90\x90", 15);
 
@@ -1024,7 +1182,10 @@ int main(int, char**) {
             const bool patchedLeftPistol = PatchValue(hProcess, LeftPistolAddr, A1);
             //Unlimited Grenades
             const bool patchedGrenades = PatchBytes(hProcess, moduleBase + 0x27C6E9A, "\x8B\xFF", 2);
-            ammoPatchApplied = patchedAmmo && patchedLeftPistol && patchedGrenades;
+            if (patchedAmmo && patchedLeftPistol && patchedGrenades) {
+                ammoPatchApplied = true;
+                ammoPatchSessionId = gTargetSessionId;
+            }
         }
         else if (!bAmmo)
         {
@@ -1033,18 +1194,26 @@ int main(int, char**) {
 
              //   mem::PatchEx((BYTE*)(moduleBase + 0x27C6E9A), (BYTE*)"\x8B\x01", 2, hProcess);
             ammoPatchApplied = false;
+            ammoPatchSessionId = 0;
         }
 
 
         static bool namePatchInitialized = false;
         static bool previousNameEnabled = false;
-        if (!namePatchInitialized || previousNameEnabled != bName)
+        static uintptr_t previousNameAddress = 0;
+        static uint32_t previousNameSessionId = 0;
+        if (!namePatchInitialized ||
+            previousNameEnabled != bName ||
+            previousNameAddress != NameAddr ||
+            previousNameSessionId != gTargetSessionId)
         {
             const char* playerName = bName ? "Danny" : "^1SyntaX-_-";
             if (WriteString(hProcess, NameAddr, playerName))
             {
                 bNameToggle = bName;
                 previousNameEnabled = bName;
+                previousNameAddress = NameAddr;
+                previousNameSessionId = gTargetSessionId;
                 namePatchInitialized = true;
             }
         }
@@ -1052,12 +1221,16 @@ int main(int, char**) {
 
         static bool clanBypassPatchInitialized = false;
         static bool previousClanBypassEnabled = false;
+        static uintptr_t previousClanBypassAddress = 0;
+        static uint32_t previousClanBypassSessionId = 0;
         PatchToggleBytesOnChange(
             hProcess,
             moduleBase + 0x27EB255,
             isPatched,
             clanBypassPatchInitialized,
             previousClanBypassEnabled,
+            previousClanBypassAddress,
+            previousClanBypassSessionId,
             "\x75\x06",
             2,
             "\x74\x06",
@@ -1071,7 +1244,7 @@ int main(int, char**) {
         }
 
 
-        if (GetAsyncKeyState(VK_F4))
+        if (GetAsyncKeyState(VK_F4) && canPatchBankAddress)
         {
             PatchValue(hProcess, BankAddr, m1);
         }
@@ -1104,26 +1277,39 @@ int main(int, char**) {
 
         static bool svCheatsPatchInitialized = false;
         static bool previousSvCheatsEnabled = false;
+        static uintptr_t previousSvCheatsAddress = 0;
+        static uint32_t previousSvCheatsSessionId = 0;
         PatchToggleValueOnChange(
             hProcess,
             SvCheatsAddr,
             bSvCheats,
             svCheatsPatchInitialized,
             previousSvCheatsEnabled,
+            previousSvCheatsAddress,
+            previousSvCheatsSessionId,
             ON,
             OFF);
         static bool rapidPatchInitialized = false;
         static bool previousRapidEnabled = false;
-        if (!rapidPatchInitialized || previousRapidEnabled != bRapid)
+        static uintptr_t previousRapidMainAddress = 0;
+        static uintptr_t previousRapidShotgunsAddress = 0;
+        static uint32_t previousRapidSessionId = 0;
+        const uintptr_t rapidMainAddress = moduleBase + 0x27B6353;
+        const uintptr_t rapidShotgunsAddress = moduleBase + 0x27C6519;
+        if (!rapidPatchInitialized ||
+            previousRapidEnabled != bRapid ||
+            previousRapidMainAddress != rapidMainAddress ||
+            previousRapidShotgunsAddress != rapidShotgunsAddress ||
+            previousRapidSessionId != gTargetSessionId)
         {
             const bool patchedMain = PatchBytes(
                 hProcess,
-                moduleBase + 0x27B6353,
+                rapidMainAddress,
                 bRapid ? "\xC7\x04\x38\x00\x00\x00\x00\x90\x90\x90" : "\x89\x0C\x38\x44\x38\xAE\x68\x0E\x00\x00",
                 10);
             const bool patchedShotguns = PatchBytes(
                 hProcess,
-                moduleBase + 0x27C6519,
+                rapidShotgunsAddress,
                 bRapid ? "\xC7\x40\x2C\x02\x00\x00\x00\x90\x90" : "\x44\x08\x70\x2C\xE8\x5E\xB4\x00\x00",
                 9);
 
@@ -1131,17 +1317,24 @@ int main(int, char**) {
             {
                 rapidPatchInitialized = true;
                 previousRapidEnabled = bRapid;
+                previousRapidMainAddress = rapidMainAddress;
+                previousRapidShotgunsAddress = rapidShotgunsAddress;
+                previousRapidSessionId = gTargetSessionId;
             }
         }
 
         static bool instantPatchInitialized = false;
         static bool previousInstantEnabled = false;
+        static uintptr_t previousInstantAddress = 0;
+        static uint32_t previousInstantSessionId = 0;
         PatchToggleBytesOnChange(
             hProcess,
             moduleBase + 0x26279A5,
             bInstant,
             instantPatchInitialized,
             previousInstantEnabled,
+            previousInstantAddress,
+            previousInstantSessionId,
             "\x0F\x8C",
             2,
             "\x0F\x8F",
@@ -1219,6 +1412,8 @@ int main(int, char**) {
 
         static bool healthPatchInitialized = false;
         static bool previousHealthEnabled = false;
+        static uintptr_t previousHealthAddress = 0;
+        static uint32_t previousHealthSessionId = 0;
         const int godEnabled = 12297;
         const int godDisabled = 12296;
         PatchToggleValueOnChange(
@@ -1227,6 +1422,8 @@ int main(int, char**) {
             bHealth,
             healthPatchInitialized,
             previousHealthEnabled,
+            previousHealthAddress,
+            previousHealthSessionId,
             godEnabled,
             godDisabled);
 
@@ -1333,19 +1530,7 @@ int main(int, char**) {
         glfwSwapBuffers(window);
     }
 
-    stopThread.store(true);
-    stopThread2.store(true);
-    stopThread3.store(true);
-
-    if (rainbowThread.joinable())
-        rainbowThread.join();
-    if (rainbowThread2.joinable())
-        rainbowThread2.join();
-    if (rainbowThread3.joinable())
-        rainbowThread3.join();
-
-    if (hProcess)
-        CloseHandle(hProcess);
+    CloseTargetProcess();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

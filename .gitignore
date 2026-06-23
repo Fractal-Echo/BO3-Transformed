@@ -30,3 +30,7 @@ build/
 imgui.ini
 Thumbs.db
 Desktop.ini
+
+# Reversa
+.reversa/config.user.toml
+_reversa_sdd/
