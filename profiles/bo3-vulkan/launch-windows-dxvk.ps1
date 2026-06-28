@@ -10,7 +10,7 @@ $profileRoot = Split-Path -Parent $PSCommandPath
 $repoRoot = Split-Path -Parent (Split-Path -Parent $profileRoot)
 $dxvkBin = Join-Path $profileRoot "bin\x64"
 $config = Join-Path $profileRoot "dxvk.conf"
-$logs = Join-Path $profileRoot "logs"
+$logs = Join-Path $GameDir "dxvk-logs"
 $gameExe = Join-Path $GameDir $ExeName
 
 if (-not (Test-Path $gameExe)) {
@@ -50,4 +50,3 @@ Write-Host "DXVK_CONFIG_FILE=$env:DXVK_CONFIG_FILE"
 Write-Host "DXVK_LOG_PATH=$env:DXVK_LOG_PATH"
 
 Start-Process -FilePath $gameExe -WorkingDirectory $GameDir
-
