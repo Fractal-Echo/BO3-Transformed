@@ -31,6 +31,12 @@ imgui.ini
 Thumbs.db
 Desktop.ini
 
+# Local research/drop-zone artifacts
+Local Assets/
+AGENTS.md
+
 # Reversa
+.agents/
+.reversa/
 .reversa/config.user.toml
 _reversa_sdd/

@@ -1,33 +1,15 @@
 #pragma once
 
-#include <string>
 #include <algorithm>
 #include <cstdint>
-
-class ScanData
-{
-private:
-	static const size_t hexTable[];
-
-public:
-	unsigned char* data; //Byte Array
-	size_t size = 0;
-
-
-	ScanData(const std::string input);
-	ScanData(size_t size);
-	~ScanData();
-
-	void print();
-};
-
+#include <string>
 
 class ScanData {
 public:
     unsigned char* data = nullptr;
     size_t size = 0;
 
-    static const size_t hexTable[];
+    static const unsigned char hexTable[];
 
     ScanData(size_t size);
     ScanData(std::string input);

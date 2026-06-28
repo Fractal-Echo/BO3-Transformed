@@ -1045,7 +1045,6 @@ int main(int, char**) {
                     CaptionAddr = DllBase + 0x50000;
                     EntityList = moduleBase + 0x7DD48D8;
                     DistanceBetween = 0x3088;
-                    HealthAddr = FindDMAAddy(hProcess, HealthAddr, { 0x2C8 });
                     WeaponInHandAddr = moduleBase + 0x7D953F0;
                     ScoreBaseAddr = moduleBase + 0x09059D58;
                     LocalPlayerOffset = moduleBase + 0x08FA0F78;
@@ -1254,12 +1253,12 @@ int main(int, char**) {
 
         if (bModSpoof && ModIdAddr == 3446990455)
         {
-            int u = 2502333264;
+            uint32_t u = 2502333264u;
             mem::PatchEx((BYTE*)ModIdAddr, (BYTE*)&u, sizeof(u), hProcess);
         }
         else
         {
-            int o = 3446990455;
+            uint32_t o = 3446990455u;
             mem::PatchEx((BYTE*)ModIdAddr, (BYTE*)&o, sizeof(o), hProcess);
         }
 

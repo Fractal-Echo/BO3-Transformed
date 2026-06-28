@@ -60,6 +60,9 @@
     <ClCompile Include="Signature.cpp">
       <Filter>signature</Filter>
     </ClCompile>
+    <ClCompile Include="ScanData.cpp">
+      <Filter>signature</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="proc.h">
@@ -72,6 +75,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Signature.h">
+      <Filter>signature</Filter>
+    </ClInclude>
+    <ClInclude Include="ScanData.h">
       <Filter>signature</Filter>
     </ClInclude>
   </ItemGroup>
