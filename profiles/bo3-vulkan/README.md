@@ -41,6 +41,12 @@ powershell -ExecutionPolicy Bypass -File .\profiles\bo3-vulkan\launch-windows-dx
 powershell -ExecutionPolicy Bypass -File .\scripts\benchmark-bo3-process.ps1 -DurationSeconds 180
 ```
 
+4. Return the game folder to native D3D11 for baseline comparison:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\profiles\bo3-vulkan\disable-windows-dxvk.ps1 -GameDir "D:\SteamLibrary\steamapps\common\Call of Duty Black Ops III"
+```
+
 ## Linux/Wine Quick Start
 
 Set the Wine prefix and game directory, then run:
