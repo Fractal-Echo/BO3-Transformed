@@ -16,6 +16,7 @@
 #include "proc.h" 
 #include "mem.h"
 #include "Helpers.h"
+
 //New Attempt
 #include <vector>
 #include "Signature.h"
@@ -44,6 +45,17 @@ static int targetIndex2 = 0;
 static float cycleInterval2 = 0.1f;
 static float lastCycleTime2 = 0.0f;
 
+static bool isCycling3 = false;
+static int targetIndex3 = 0;
+static float cycleInterval3 = 0.1f;
+static float lastCycleTime3 = 0.0f;
+
+
+//BO3Enhanced Rainbow
+std::string targets3[] = {
+    "^1BO3Enhanced v1.16", "^2BO3Enhanced v1.16", "^3BO3Enhanced v1.16", "^4BO3Enhanced v1.16",
+    "^5BO3Enhanced v1.16", "^6BO3Enhanced v1.16", "^7BO3Enhanced v1.16", "^8BO3Enhanced v1.16", "^9BO3Enhanced v1.16"
+};
 
 // List of targets to cycle through
 
@@ -118,12 +130,6 @@ static std::vector<Weapon> moddedWeaponList_1 = {
 static int selectedWeaponIndex = 0;
 
 static std::vector<Weapon>* currentWeaponList = &weaponList;
-static constexpr int kMapIdDieRise = 1683975546;
-static constexpr int kMapIdTranzit = 1952411002;
-static constexpr uintptr_t kClanTagPatchOffset = 0x4;
-static constexpr uintptr_t kCamoBytePatchOffset = 23;
-static constexpr uintptr_t kTableCamoPatternOffset = 0x150;
-static constexpr uintptr_t kBankPatternOffset = 0x28;
 
 
 struct Camo {
@@ -153,196 +159,97 @@ static std::vector<Camo> CamoList = {
 
 
 static int selectedCamoIndex = 0;
-static uint32_t gTargetSessionId = 0;
-
-static bool CanPatchAddress(HANDLE process, uintptr_t address) {
-    return process != nullptr && address != 0;
-}
-template <typename T>
-static bool ReadValue(HANDLE process, uintptr_t address, T& value) {
-    if (!CanPatchAddress(process, address))
-        return false;
-
-    SIZE_T bytesRead = 0;
-    return ReadProcessMemory(
-        process,
-        reinterpret_cast<LPCVOID>(address),
-        &value,
-        sizeof(value),
-        &bytesRead) && bytesRead == sizeof(value);
-}
-
-template <typename T>
-static bool PatchValue(HANDLE process, uintptr_t address, const T& value) {
-    if (!CanPatchAddress(process, address))
-        return false;
-
-    return mem::TryPatchEx(reinterpret_cast<BYTE*>(address),
-        reinterpret_cast<const BYTE*>(&value),
-        sizeof(value),
-        process);
-}
-
-static bool PatchBytes(HANDLE process, uintptr_t address, const char* bytes, size_t size) {
-    if (!CanPatchAddress(process, address) || bytes == nullptr || size == 0)
-        return false;
-
-    return mem::TryPatchEx(reinterpret_cast<BYTE*>(address),
-        reinterpret_cast<const BYTE*>(bytes),
-        size,
-        process);
-}
-
-static bool WriteString(HANDLE process, uintptr_t address, const char* value) {
-    if (!CanPatchAddress(process, address) || value == nullptr)
-        return false;
-
-    return mem::TryWriteStringEx(reinterpret_cast<BYTE*>(address), value, process);
-}
-
-template <typename T>
-static bool PatchToggleValueOnChange(
-    HANDLE process,
-    uintptr_t address,
-    bool enabled,
-    bool& initialized,
-    bool& previousEnabled,
-    uintptr_t& previousAddress,
-    uint32_t& previousSessionId,
-    const T& enabledValue,
-    const T& disabledValue) {
-    if (initialized &&
-        previousEnabled == enabled &&
-        previousAddress == address &&
-        previousSessionId == gTargetSessionId) {
-        return true;
-    }
-
-    if (!PatchValue(process, address, enabled ? enabledValue : disabledValue))
-        return false;
-
-    initialized = true;
-    previousEnabled = enabled;
-    previousAddress = address;
-    previousSessionId = gTargetSessionId;
-    return true;
-}
-
-static bool PatchToggleBytesOnChange(
-    HANDLE process,
-    uintptr_t address,
-    bool enabled,
-    bool& initialized,
-    bool& previousEnabled,
-    uintptr_t& previousAddress,
-    uint32_t& previousSessionId,
-    const char* enabledBytes,
-    size_t enabledSize,
-    const char* disabledBytes,
-    size_t disabledSize) {
-    if (initialized &&
-        previousEnabled == enabled &&
-        previousAddress == address &&
-        previousSessionId == gTargetSessionId) {
-        return true;
-    }
-
-    if (!PatchBytes(process,
-        address,
-        enabled ? enabledBytes : disabledBytes,
-        enabled ? enabledSize : disabledSize)) {
-        return false;
-    }
-
-    initialized = true;
-    previousEnabled = enabled;
-    previousAddress = address;
-    previousSessionId = gTargetSessionId;
-    return true;
-}
 
 bool PatchWeaponID(uintptr_t addr, int id, HANDLE hProcess) {
-    return PatchValue(hProcess, addr, id);
+    mem::PatchEx((BYTE*)addr, (BYTE*)&id, sizeof(id), hProcess);
+    return true; // always returns true since PatchEx is void
 }
 
 bool PatchCamoID(uintptr_t addr2, int id, HANDLE hProcess) {
-    return PatchValue(hProcess, addr2, id);
-}
-static bool TryReadMapId(HANDLE process, uintptr_t mapIdAddress, int& mapId) {
-    return ReadValue(process, mapIdAddress, mapId);
-}
-
-static bool IsSupportedMapId(int mapId) {
-    return mapId == kMapIdDieRise || mapId == kMapIdTranzit;
-}
-
-static bool ShouldScanBankAddress(int mapId) {
-    return mapId == kMapIdDieRise || mapId == kMapIdTranzit;
-}
-
-static bool ShouldScanTableCamoAddress(int mapId) {
-    return mapId == kMapIdDieRise;
-}
-
-static bool CanPatchBankAddress(int mapId, uintptr_t bankAddress) {
-    return ShouldScanBankAddress(mapId) && bankAddress != 0;
-}
-
-static bool CanPatchTableCamoAddress(int mapId, uintptr_t tableCamoAddress) {
-    return ShouldScanTableCamoAddress(mapId) && tableCamoAddress != 0;
-}
-
-static std::vector<Weapon>* GetWeaponListForMapId(int mapId) {
-    switch (mapId) {
-    case kMapIdDieRise:
-        return &weaponList;
-    case kMapIdTranzit:
-        return &TranzitWeaponList_1;
-    default:
-        return nullptr;
-    }
-}
-
-static bool IsValidWeaponAddress(HANDLE process, uintptr_t weaponAddress) {
-    int currentWeaponId = 0;
-    return ReadValue(process, weaponAddress, currentWeaponId);
-}
-
-static uintptr_t ResolvePatternAddress(HANDLE process, const char* pattern, const char* mask, uintptr_t subtractOffset) {
-    const uintptr_t patternAddress = FindPatternEx(process, pattern, mask);
-    if (patternAddress == 0 || patternAddress < subtractOffset)
-        return 0;
-
-    return patternAddress - subtractOffset;
-}
-
-static uintptr_t ResolveClanTagAddress(HANDLE process) {
-    const uintptr_t patternAddress = FindPatternEx(process, "\x5B\x33\x33\x5D\x5E", "xxxxx");
-    if (patternAddress == 0)
-        return 0;
-
-    return patternAddress + kClanTagPatchOffset;
-}
-
-static uintptr_t ResolveCamoByteAddress(HANDLE process, DWORD processId, uintptr_t baseAddress) {
-    return FindPattern(
-        process,
-        processId,
-        baseAddress,
-        "\x00\x00\x00\x00\x00\x00\x00\xBD\x78\x50\x54\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x16",
-        "???????xxx????x????????x");
+    mem::PatchEx((BYTE*)addr2, (BYTE*)&id, sizeof(id), hProcess);
+    return true; // always returns true since PatchEx is void
 }
 
 
 
 bool bHealth = true, bAmmo = false, bRewardGiven = false, bCamoFlag = false, bName = false, bCamo = false, bNameToggle = false, bSvCheats = false, bDebug = false, bInstant = false, bNoclip = false, bToggleMW = false, bToggleQW = false, bToggleWW = false, bToggleEW = false, bToggleScore = false, bToggleAbilityDamage = false, bToggleSpeed = false, bToggleJump = false, bRainbow = false, bRainbow2 = false, bRainbow3 = false, bRainbowBypass = false, bRainbowCycle = false, bTest = false, bTest2 = false, bTest3 = false, bReviveGoldTU8E = false, bGoldTU8EHealth = false, bUnlimitedGrenades = false, bGoldTU8EFlag = true, bRapid = false;
-bool bClan = false, isPatched = false, bBank = false;
+bool bClan = false, isPatched = false, bBank = false, bSpirit = false;
+bool bHideCaption = false, bModSpoof = false;
 std::thread rainbowThread;
 std::atomic<bool> stopThread(false);
 std::thread rainbowThread2;
 std::atomic<bool> stopThread2(false);
 std::thread rainbowThread3;
 std::atomic<bool> stopThread3(false);
+
+static std::atomic<bool> bScanInProgress(false);
+static int    LastMapId = 0;
+static bool   bWaitingForMap = true;
+static uintptr_t BankAddr = 0; // move these to file/class scope if not already
+
+static std::atomic<bool> bSpiritScanInProgress(false);
+static bool   bWaitingForSpirit = true;
+
+static std::atomic<bool> bModScanInProgress(false);
+static bool   bWaitingForMod = true;
+
+// ── Address validation & auto-attach helpers ─────────────────────────────────
+
+// Returns true if 'addr' is non-zero and points to committed, readable memory
+// in the target process.  Pass hProcess = NULL to skip the VirtualQueryEx check
+// (safe before the handle is open).
+static bool IsAddressValid(uintptr_t addr, HANDLE hProc = nullptr)
+{
+    if (addr == 0)
+        return false;
+    if (!hProc)
+        return false;
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (!VirtualQueryEx(hProc, reinterpret_cast<LPCVOID>(addr), &mbi, sizeof(mbi)))
+        return false;
+    // Must be committed and at least readable
+    return (mbi.State == MEM_COMMIT) &&
+        (mbi.Protect & (PAGE_READONLY | PAGE_READWRITE |
+            PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE |
+            PAGE_EXECUTE_WRITECOPY | PAGE_WRITECOPY)) &&
+        !(mbi.Protect & PAGE_GUARD);
+}
+
+// Resets every resolved address back to 0 so the attach block re-resolves them
+// on the next frame.  Call this whenever the process goes away or an address
+// 
+DWORD procId;
+HANDLE hProcess;
+uintptr_t moduleBase = 0, DllBase = 0, HookLastByteAddr = 0, HookClanByte = 0, SigCamoAddr = 0, ModIdAddr = 0, TestAddr = 0, LeftPistolAddr = 0, AmmoBaseAddr = 0, NameAddr = 0, NameBaseAddr = 0, MapIdAddr = 0, ConnectionIDAddr = 0, WeaponInHandAddr = 0, TableBase = 0, SvCheatsAddr = 0, DeveloperAddr = 0, TWeaponAddr = 0, LocalPlayerOffset = 0, ZombiesCountAddr = 0, CamoAddr1 = 0, CamoAddr2 = 0, CamoAddr3 = 0, CamoAddr4 = 0, CamoAddr5 = 0, XCoordAddr = 0, YCoordAddr = 0, ZCoordAddr = 0, NoclipAddr = 0, GoldTU8EHealthAddr = 0, GoldTU8EBaseAddr = 0, GoldTU8ENameAddr = 0, GodBaseAddr = 0, GodAddr = 0, MWeaponAddr = 0, QWeaponAddr = 0, WWeaponAddr = 0, EWeaponAddr = 0, ScoreAddr = 0, ScoreBaseAddr = 0, ClassCamoBaseAddr = 0, ClassCamoAddr = 0;
+uintptr_t TestAddr2 = 0, TableCamoAddr = 0, EntityList = 0, DistanceBetween = 0, HealthAddr = 0, ClipIdAddr = 0, SpiritTimerAddr = 0;
+uintptr_t CaptionAddr = 0;
+// probe fails.
+static void ResetAddresses()
+{
+    moduleBase = HookLastByteAddr = HookClanByte = SigCamoAddr = ModIdAddr = 0;
+    TestAddr = LeftPistolAddr = AmmoBaseAddr = NameAddr = NameBaseAddr = 0;
+    MapIdAddr = ConnectionIDAddr = WeaponInHandAddr = TableBase = 0;
+    SvCheatsAddr = DeveloperAddr = TWeaponAddr = LocalPlayerOffset = 0;
+    ZombiesCountAddr = CamoAddr1 = CamoAddr2 = CamoAddr3 = CamoAddr4 = CamoAddr5 = 0;
+    XCoordAddr = YCoordAddr = ZCoordAddr = NoclipAddr = 0;
+    GoldTU8EHealthAddr = GoldTU8EBaseAddr = GoldTU8ENameAddr = 0;
+    GodBaseAddr = GodAddr = MWeaponAddr = QWeaponAddr = WWeaponAddr = EWeaponAddr = 0;
+    ScoreAddr = ScoreBaseAddr = ClassCamoBaseAddr = ClassCamoAddr = 0;
+    TestAddr2 = TableCamoAddr = EntityList = DistanceBetween = HealthAddr = 0;
+    ClipIdAddr = SpiritTimerAddr = BankAddr = 0;
+    LastMapId = 0;
+    bWaitingForMap = true;
+    bScanInProgress = false;
+    bWaitingForSpirit = true;
+    bSpiritScanInProgress = false;
+    bWaitingForMod = true;
+    bModScanInProgress = false;
+    printf("[AUTO-ATTACH] All addresses reset.\n");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+
 
 ImVec4 RainbowColor(float frequency, float phase, float amplitude) {
     const float time = static_cast<float>(ImGui::GetTime());
@@ -381,107 +288,22 @@ int m0 = 0;
 int mx = 999;
 
 
+float posX1 = -5406.315918f;
+float posY1 = 76.51004028f;
+float posZ1 = 3006.536133f;
+float posX2 = 1024.260742f;
+float posY2 = -62.875f;
+float posZ2 = -594.0992432f;
+float posX3 = -5827.96582f;
+float posY3 = -34.76357269f;
+float posZ3 = -6427.724121f;
 
-DWORD procId;
-HANDLE hProcess;
-uintptr_t moduleBase = 0, HookLastByteAddr = 0, HookClanByte = 0, SigCamoAddr = 0, ModIdAddr = 0, TestAddr = 0, LeftPistolAddr = 0, AmmoBaseAddr = 0, NameAddr = 0, NameBaseAddr = 0, MapIdAddr = 0, ConnectionIDAddr = 0, WeaponInHandAddr = 0, TableBase = 0, SvCheatsAddr = 0, DeveloperAddr = 0, TWeaponAddr = 0, LocalPlayerOffset = 0, ZombiesCountAddr = 0, CamoAddr1 = 0, CamoAddr2 = 0, CamoAddr3 = 0, CamoAddr4 = 0, CamoAddr5 = 0, XCoordAddr = 0, YCoordAddr = 0, ZCoordAddr = 0, NoclipAddr = 0, GoldTU8EHealthAddr = 0, GoldTU8EBaseAddr = 0, GoldTU8ENameAddr = 0, GodBaseAddr = 0, GodAddr = 0, MWeaponAddr = 0, QWeaponAddr = 0, WWeaponAddr = 0, EWeaponAddr = 0, ScoreAddr = 0, ScoreBaseAddr = 0, ClassCamoBaseAddr = 0, ClassCamoAddr = 0;
-uintptr_t TestAddr2 = 0, TableCamoAddr = 0, BankAddr = 0, EntityList = 0, DistanceBetween = 0, HealthAddr = 0;
+int sp = 1132068864;
+int sp0 = 1132068864;
 
-static bool IsTargetProcessAlive(HANDLE process) {
-    if (!process)
-        return false;
 
-    DWORD exitCode = 0;
-    return GetExitCodeProcess(process, &exitCode) && exitCode == STILL_ACTIVE;
-}
 
-static void StopRainbowThreads() {
-    stopThread.store(true);
-    stopThread2.store(true);
-    stopThread3.store(true);
 
-    if (rainbowThread.joinable())
-        rainbowThread.join();
-    if (rainbowThread2.joinable())
-        rainbowThread2.join();
-    if (rainbowThread3.joinable())
-        rainbowThread3.join();
-
-    bRainbow = false;
-    bRainbow2 = false;
-    bRainbow3 = false;
-}
-
-static void ResetRuntimeAddresses() {
-    moduleBase = HookLastByteAddr = HookClanByte = SigCamoAddr = ModIdAddr = TestAddr = LeftPistolAddr = AmmoBaseAddr = NameAddr = NameBaseAddr = MapIdAddr = ConnectionIDAddr = WeaponInHandAddr = TableBase = SvCheatsAddr = DeveloperAddr = TWeaponAddr = LocalPlayerOffset = ZombiesCountAddr = CamoAddr1 = CamoAddr2 = CamoAddr3 = CamoAddr4 = CamoAddr5 = XCoordAddr = YCoordAddr = ZCoordAddr = NoclipAddr = GoldTU8EHealthAddr = GoldTU8EBaseAddr = GoldTU8ENameAddr = GodBaseAddr = GodAddr = MWeaponAddr = QWeaponAddr = WWeaponAddr = EWeaponAddr = ScoreAddr = ScoreBaseAddr = ClassCamoBaseAddr = ClassCamoAddr = 0;
-    TestAddr2 = TableCamoAddr = BankAddr = EntityList = DistanceBetween = HealthAddr = 0;
-}
-
-static void CloseTargetProcess() {
-    StopRainbowThreads();
-
-    if (hProcess) {
-        CloseHandle(hProcess);
-        hProcess = nullptr;
-    }
-
-    procId = 0;
-    ResetRuntimeAddresses();
-    ++gTargetSessionId;
-    bBank = false;
-}
-
-static void SyncMapSpecificRuntimeAddresses(bool hasMapId, int mapId) {
-    static bool hadPreviousMapId = false;
-    static int previousMapId = 0;
-
-    if (!hasMapId) {
-        hadPreviousMapId = false;
-        BankAddr = 0;
-        TableCamoAddr = 0;
-        return;
-    }
-
-    if (!hadPreviousMapId || previousMapId != mapId) {
-        BankAddr = 0;
-        TableCamoAddr = 0;
-        previousMapId = mapId;
-        hadPreviousMapId = true;
-    }
-
-    if (!ShouldScanBankAddress(mapId))
-        BankAddr = 0;
-
-    if (!ShouldScanTableCamoAddress(mapId))
-        TableCamoAddr = 0;
-}
-
-static void ResolveRuntimeSignatures(HANDLE process, DWORD processId, uintptr_t baseAddress, int mapId) {
-    if (!CanPatchAddress(process, baseAddress))
-        return;
-
-    if (HookClanByte == 0)
-        HookClanByte = ResolveClanTagAddress(process);
-
-    if (HookLastByteAddr == 0)
-        HookLastByteAddr = ResolveCamoByteAddress(process, processId, baseAddress);
-
-    if (ShouldScanTableCamoAddress(mapId) && TableCamoAddr == 0) {
-        TableCamoAddr = ResolvePatternAddress(
-            process,
-            "\xCD\x2C\xA8\x44\xAC\x4C\xB2\x43\xBE\xFF\x74\x43",
-            "xxxxxxxxxxxx",
-            kTableCamoPatternOffset);
-    }
-
-    if (ShouldScanBankAddress(mapId) && BankAddr == 0) {
-        BankAddr = ResolvePatternAddress(
-            process,
-            "\x9C\x50\xE5\xCB\x00\x00\x00\x00",
-            "xxxxxxxx",
-            kBankPatternOffset);
-    }
-}
 
 
 static void glfw_error_callback(int error, const char* description) {
@@ -494,7 +316,7 @@ void RainbowCycleLoop() {
 
         for (int RainbowValue = 1; RainbowValue <= 126; ++RainbowValue) {
             if (stopThread.load()) break;
-            PatchValue(hProcess, CamoAddr2, RainbowValue);
+            mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&RainbowValue, sizeof(RainbowValue), hProcess);
             std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Rainbow Delay //100 MS original value
         }
     }
@@ -504,11 +326,7 @@ void RainbowCycleLoop2() {
     while (!stopThread2.load()) {
         for (int RainbowValue2 = 1; RainbowValue2 <= 126; ++RainbowValue2) {
             if (stopThread2.load()) break;
-            int currentMapId = 0;
-            if (TryReadMapId(hProcess, MapIdAddr, currentMapId) &&
-                CanPatchTableCamoAddress(currentMapId, TableCamoAddr)) {
-                PatchValue(hProcess, TableCamoAddr, RainbowValue2);
-            }
+            mem::PatchEx((BYTE*)TableCamoAddr, (BYTE*)&RainbowValue2, sizeof(RainbowValue2), hProcess);
             std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Rainbow Delay //100 MS original value
         }
     }
@@ -518,11 +336,13 @@ void RainbowCycleLoop3() {
     while (!stopThread3.load()) {
         for (int RainbowValue3 = 1; RainbowValue3 <= 126; ++RainbowValue3) {
             if (stopThread3.load()) break;
-            PatchValue(hProcess, CamoAddr5, RainbowValue3);
+            mem::PatchEx((BYTE*)CamoAddr5, (BYTE*)&RainbowValue3, sizeof(RainbowValue3), hProcess);
             std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Rainbow Delay //100 MS original value
         }
     }
 }
+
+
 
 
 
@@ -644,7 +464,100 @@ void DrawTextWatermark(const char* watermarkText)
 
 
 
+// Add this struct at the top of your file with your other globals
+struct ScanParams
+{
+    HANDLE  hProc;
+};
+static ScanParams g_ScanParams;
 
+// Add this plain function near your other thread functions (RainbowCycleLoop etc)
+DWORD WINAPI ScanThread(LPVOID lpParam)
+{
+    ScanParams* p = (ScanParams*)lpParam;
+
+    Sleep(2000);
+
+    uintptr_t found = FindPatternEx(
+        p->hProc,
+        "\x9C\x50\xE5\xCB\x00\x00\x00\x00",
+        "xxxxxxxx"
+    );
+
+    printf("[SCAN] FindPatternEx result: 0x%llX\n", found);
+
+    if (found != 0)
+    {
+        BankAddr = found - 0x28;
+        bWaitingForMap = false;
+        printf("[SCAN] BankAddr set: 0x%llX\n", BankAddr);
+    }
+    else
+    {
+        printf("[SCAN] Pattern not found - will retry next frame\n");
+    }
+
+    bScanInProgress = false;
+    return 0;
+}
+
+DWORD WINAPI SpiritScanThread(LPVOID lpParam)
+{
+    ScanParams* p = (ScanParams*)lpParam;
+
+    Sleep(2000);
+
+    uintptr_t found = FindPatternEx(
+        p->hProc,
+        "\x00\x16\x88\x42\x55\x00\x00\x00\x00\x00\x00\x00\x00",
+        "xxxxxxxxx????"
+    );
+
+    printf("[SPIRIT SCAN] FindPatternEx result: 0x%llX\n", found);
+
+    if (found != 0)
+    {
+        SpiritTimerAddr = found -= 0x26;
+        bWaitingForSpirit = false;
+        printf("[SPIRIT SCAN] SpiritTimerAddr set: 0x%llX\n", SpiritTimerAddr);
+    }
+    else
+    {
+        printf("[SPIRIT SCAN] Pattern not found - will retry next frame\n");
+    }
+
+    bSpiritScanInProgress = false;
+    return 0;
+}
+
+DWORD WINAPI ModScanThread(LPVOID lpParam)
+{
+    ScanParams* p = (ScanParams*)lpParam;
+
+    Sleep(2000);
+
+    uintptr_t found = FindPatternEx(
+        p->hProc,
+        "\xA5\x9B\x56\xDF\x00\x00\x00\x00\x87",
+        "xxxxxxxxx"
+    );
+
+    printf("[MOD SCAN] FindPatternEx result: 0x%llX\n", found);
+
+    if (found != 0)
+    {
+        ModIdAddr = found;
+        bWaitingForMod = false;
+        printf("[MOD SCAN] ModIdAddr set: 0x%llX\n", ModIdAddr);
+    }
+    else
+    {
+        printf("[MOD SCAN] Pattern not found - will retry next frame\n");
+    }
+
+    bModScanInProgress = false;
+    return 0;
+}
 
 
 
@@ -698,20 +611,33 @@ int main(int, char**) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        if (hProcess && !IsTargetProcessAlive(hProcess))
-            CloseTargetProcess();
-
         DrawTextWatermark("X v0.1.0");
         DrawDebugWatermark(hProcess, MWeaponAddr);
         DrawDebugWatermark2(hProcess, CamoAddr2);
 
-        int frameMapId = 0;
-        const bool hasFrameMapId = TryReadMapId(hProcess, MapIdAddr, frameMapId);
-        SyncMapSpecificRuntimeAddresses(hasFrameMapId, frameMapId);
-        const bool canPatchBankAddress = hasFrameMapId && CanPatchBankAddress(frameMapId, BankAddr);
-        const bool canPatchTableCamoAddress = hasFrameMapId && CanPatchTableCamoAddress(frameMapId, TableCamoAddr);
 
 
+        if (GetAsyncKeyState(VK_F5))
+        {
+            mem::PatchEx((BYTE*)XCoordAddr, (BYTE*)&posX1, sizeof(posX1), hProcess);
+            mem::PatchEx((BYTE*)YCoordAddr, (BYTE*)&posY1, sizeof(posY1), hProcess);
+            mem::PatchEx((BYTE*)ZCoordAddr, (BYTE*)&posZ1, sizeof(posZ1), hProcess);
+        }
+
+
+        if (GetAsyncKeyState(VK_F6))
+        {
+            mem::PatchEx((BYTE*)XCoordAddr, (BYTE*)&posX2, sizeof(posX2), hProcess);
+            mem::PatchEx((BYTE*)YCoordAddr, (BYTE*)&posY2, sizeof(posY2), hProcess);
+            mem::PatchEx((BYTE*)ZCoordAddr, (BYTE*)&posZ2, sizeof(posZ2), hProcess);
+        }
+
+        if (GetAsyncKeyState(VK_F7))
+        {
+            mem::PatchEx((BYTE*)XCoordAddr, (BYTE*)&posX3, sizeof(posX3), hProcess);
+            mem::PatchEx((BYTE*)YCoordAddr, (BYTE*)&posY3, sizeof(posY3), hProcess);
+            mem::PatchEx((BYTE*)ZCoordAddr, (BYTE*)&posZ3, sizeof(posZ3), hProcess);
+        }
 
 
 
@@ -729,7 +655,6 @@ int main(int, char**) {
 
 
 
-
         if (bMenuVisible) {
             ImGui::Begin("X V0.1.0");
             ImGui::Checkbox("Health", &bHealth);
@@ -742,7 +667,10 @@ int main(int, char**) {
             ImGui::Checkbox("GoldTU8E", &bGoldTU8EHealth);
             ImGui::Checkbox("Sv_Cheats", &bSvCheats);
             ImGui::Checkbox("Name", &bName);
-            ImGui::Checkbox("Sig", &bClan);
+            ImGui::Checkbox("Rainbow-Tag", &bClan);
+            ImGui::Checkbox("Unlimited Spirit", &bSpirit);
+            ImGui::Checkbox("bCaption", &bHideCaption);
+            ImGui::Checkbox("bModSpoof", &bModSpoof);
             // ImGui::Checkbox("EntityList", &bClan);
             ImGui::Checkbox("Galaxy", &bCamo);
             ImGui::InputInt("Primary-Weapon", &MWeaponId);
@@ -777,7 +705,7 @@ int main(int, char**) {
             bToggleScore = (ImGui::IsKeyPressed(ImGuiKey_Enter) && ImGui::IsItemFocused());
 
 
-            if (ImGui::Button("Max Bank") && canPatchBankAddress)
+            if (ImGui::Button("Max Bank"))
             {
                 bBank = !bBank;
 
@@ -787,28 +715,23 @@ int main(int, char**) {
 
 
 
-            static bool bankPatchInitialized = false;
-            static bool previousBankEnabled = false;
-            static uintptr_t previousBankAddress = 0;
-            static uint32_t previousBankSessionId = 0;
-            if (!canPatchBankAddress) {
-                bBank = false;
-                bankPatchInitialized = false;
-                previousBankEnabled = false;
-                previousBankAddress = 0;
-                previousBankSessionId = 0;
+            if (bBank)
+            {
+                mem::PatchEx((BYTE*)BankAddr, (BYTE*)&m1, sizeof(m1), hProcess);
             }
-            else {
-                PatchToggleValueOnChange(
-                    hProcess,
-                    BankAddr,
-                    bBank,
-                    bankPatchInitialized,
-                    previousBankEnabled,
-                    previousBankAddress,
-                    previousBankSessionId,
-                    m1,
-                    m0);
+            else
+            {
+                mem::PatchEx((BYTE*)BankAddr, (BYTE*)&m0, sizeof(m0), hProcess);
+            }
+
+
+            if (bSpirit)
+            {
+                mem::PatchEx((BYTE*)SpiritTimerAddr, (BYTE*)&sp, sizeof(sp), hProcess);
+            }
+            else
+            {
+                mem::PatchEx((BYTE*)SpiritTimerAddr, (BYTE*)&sp0, sizeof(sp0), hProcess);
             }
 
             /*
@@ -844,27 +767,37 @@ int main(int, char**) {
             }
             */
 
+
+
+
+
+
             int currentMapId = 0;
-            const bool hasMapId = TryReadMapId(hProcess, MapIdAddr, currentMapId);
-            const bool hasSupportedMapId = hasMapId && IsSupportedMapId(currentMapId);
-            std::vector<Weapon>* mapWeaponList = hasSupportedMapId ? GetWeaponListForMapId(currentMapId) : nullptr;
-            currentWeaponList = mapWeaponList != nullptr ? mapWeaponList : &weaponList;
+            if (hProcess && MapIdAddr != 0) {
+                ReadProcessMemory(hProcess, (LPCVOID)MapIdAddr, &currentMapId, sizeof(currentMapId), nullptr);
+
+                switch (currentMapId) {
+                case 1683975546: // Die Rise
+                    currentWeaponList = &weaponList;
+                    break;
+                case 1952411002: // Tranzit
+                    currentWeaponList = &TranzitWeaponList_1;
+                    break;
+                default:
+                    currentWeaponList = &weaponList;
+                    break;
+                }
+            }
+
             if (currentWeaponList == nullptr || currentWeaponList->empty()) {
                 currentWeaponList = &weaponList;
             }
             if (selectedWeaponIndex < 0 || selectedWeaponIndex >= static_cast<int>(currentWeaponList->size())) {
                 selectedWeaponIndex = 0;
             }
-            const bool hasValidWeaponAddress = IsValidWeaponAddress(hProcess, QWeaponAddr);
 
             ImGui::Text("Weapon Selector");
-            if (!hasSupportedMapId) {
-                ImGui::TextDisabled("Waiting for Tranzit or Die Rise map ID");
-            }
-            else if (!hasValidWeaponAddress) {
-                ImGui::TextDisabled("Waiting for valid weapon address");
-            }
-            else if (ImGui::BeginCombo("##WeaponSelector", (*currentWeaponList)[selectedWeaponIndex].name)) {
+            if (ImGui::BeginCombo("##WeaponSelector", (*currentWeaponList)[selectedWeaponIndex].name)) {
                 for (int i = 0; i < static_cast<int>(currentWeaponList->size()); ++i) {
                     bool isSelected = (selectedWeaponIndex == i);
                     if (ImGui::Selectable((*currentWeaponList)[i].name, isSelected)) {
@@ -912,8 +845,8 @@ int main(int, char**) {
                         }
 
                         int CamoID = CamoList[i].id;
-                        if (!PatchCamoID(camoAddrToUse, CamoID, hProcess)) {
-                            std::cerr << "Failed to patch camo ID to process memory!" << std::endl;
+                        if (!PatchWeaponID(camoAddrToUse, CamoID, hProcess)) {
+                            std::cerr << "Failed to patch weapon ID to process memory!" << std::endl;
                         }
                         else {
                             std::cout << "Patched Camo ID: " << CamoID
@@ -943,7 +876,10 @@ int main(int, char**) {
 
 
 
-
+            if (ImGui::Button("Toggle BO3Enhanced Rainbow"))
+            {
+                isCycling3 = !isCycling3;
+            }
 
             if (ImGui::Button("Toggle Name Rainbow")) {
                 // Toggle the flag when the button is pressed
@@ -953,6 +889,7 @@ int main(int, char**) {
 
 
             }
+
 
 
             if (ImGui::Button("Toggle GoldTU8E Rainbow"))
@@ -978,20 +915,12 @@ int main(int, char**) {
                     }
 
 
-                    PatchValue(hProcess, CamoAddr2, originalCamoValue);
+                    mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&originalCamoValue, sizeof(originalCamoValue), hProcess);
                 }
             }
 
 
-            if (!canPatchTableCamoAddress && bRainbow2) {
-                bRainbow2 = false;
-                stopThread2.store(true);
-                if (rainbowThread2.joinable()) {
-                    rainbowThread2.join();
-                }
-            }
-
-            if (ImGui::Button("Toggle Rainbow Table Camo") && canPatchTableCamoAddress) {
+            if (ImGui::Button("Toggle Rainbow Table Camo")) {
                 bRainbow2 = !bRainbow2;
                 if (bRainbow2) {
                     stopThread2.store(false);
@@ -1005,7 +934,7 @@ int main(int, char**) {
                         rainbowThread2.join();
                     }
                     int staticColorValue = 0;
-                    PatchValue(hProcess, CamoAddr4, staticColorValue);
+                    mem::PatchEx((BYTE*)CamoAddr4, (BYTE*)&staticColorValue, sizeof(staticColorValue), hProcess);
                     //  mem::PatchEx((BYTE*)(moduleBase + 0x427A75), (BYTE*)"\x74\x0D", 2, hProcess);
                 }
             }
@@ -1024,7 +953,7 @@ int main(int, char**) {
                         rainbowThread3.join();
                     }
                     int staticColorValue = 0;
-                    PatchValue(hProcess, CamoAddr5, staticColorValue);
+                    mem::PatchEx((BYTE*)CamoAddr5, (BYTE*)&staticColorValue, sizeof(staticColorValue), hProcess);
                     //  mem::PatchEx((BYTE*)(moduleBase + 0x427A75), (BYTE*)"\x74\x0D", 2, hProcess);
                 }
             }
@@ -1043,27 +972,77 @@ int main(int, char**) {
             ImVec4 rainbowTextColor = RainbowColor(1.0f, 0.3f, 1.0f);
 
             ImGui::TextColored(rainbowTextColor, "*_* != GoldTU8E;");
+
+
+            ImGui::TextColored(rainbowTextColor, R"(
+                   __              __
+                   \ `-._......_.-` /
+                    `.  '.    .'  .'
+                     //  _`\/`_  \\
+                    ||  /\O||O/\  ||
+                    |\  \_/||\_/  /|
+                    \ '.   \/   .' /
+                    / ^ `'~  ~'`   \
+                   /  _-^_~ -^_ ~-  |
+                   | / ^_ -^_- ~_^\ |
+                   | |~_ ^- _-^_ -| |
+                   | \  ^-~_ ~-_^ / |
+                   \_/;-.,____,.-;\_/
+            =jgs======(_(_(==)_)_)=========
+
+           ==================================
+
+)");
+
+
             ImGui::End();
         }
 
-        if (procId == 0) {
-            static float lastProcessSearch = -2.0f;
-            const float currentTime = static_cast<float>(ImGui::GetTime());
-            if (currentTime - lastProcessSearch >= 2.0f) {
-                lastProcessSearch = currentTime;
+
+
+        // ── Auto re-attach: detect process death, then re-attach when it comes back ──
+        {
+            bool needReattach = false;
+
+            if (procId != 0 && hProcess != nullptr)
+            {
+                // Check whether the process is still alive
+                DWORD exitCode = STILL_ACTIVE;
+                if (!GetExitCodeProcess(hProcess, &exitCode) || exitCode != STILL_ACTIVE)
+                {
+                    printf("[AUTO-ATTACH] BlackOps3.exe closed (exit 0x%X). Waiting for relaunch...\n", exitCode);
+                    CloseHandle(hProcess);
+                    hProcess = nullptr;
+                    procId = 0;
+                    ResetAddresses();
+                    needReattach = true;
+                }
+                else
+                {
+                    // Process alive — spot-check one key resolved address each frame.
+                    // If it has become invalid (e.g. map unloaded / ASLR shift) reset
+                    // and let the block below re-resolve everything.
+                    if (LocalPlayerOffset != 0 && !IsAddressValid(LocalPlayerOffset, hProcess))
+                    {
+                        printf("[AUTO-ATTACH] LocalPlayerOffset 0x%llX is no longer valid — re-resolving addresses.\n",
+                            (unsigned long long)LocalPlayerOffset);
+                        ResetAddresses();
+                        needReattach = true;   // keep procId/hProcess; only addresses need refresh
+                    }
+                }
+            }
+
+            if (procId == 0) {
                 procId = GetProcId(L"BlackOps3.exe");
             }
 
-            if (procId != 0) {
-                hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, procId);
+            if (procId != 0 && (hProcess == nullptr || needReattach)) {
+                if (hProcess == nullptr)
+                    hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, procId);
                 if (hProcess) {
-                    ResetRuntimeAddresses();
                     moduleBase = GetModuleBaseAddress(procId, L"BlackOps3.exe");
-                    if (moduleBase == 0) {
-                        CloseTargetProcess();
-                    }
-                    else {
-                    ++gTargetSessionId;
+                    DllBase = GetModuleBaseAddress(procId, L"T7InternalWS.dll");
+                    CaptionAddr = DllBase + 0x50000;
                     EntityList = moduleBase + 0x7DD48D8;
                     DistanceBetween = 0x3088;
                     HealthAddr = FindDMAAddy(hProcess, HealthAddr, { 0x2C8 });
@@ -1096,6 +1075,7 @@ int main(int, char**) {
                     NameAddr = FindDMAAddy(hProcess, NameBaseAddr, { 0x2C });
                     ModIdAddr = moduleBase + 0x90FFFD7;//Useful for logic related to weapon id's etc
                     MapIdAddr = moduleBase + 0x90FC4D0;
+                    ClipIdAddr = moduleBase + 0x18738BE8;
                     TableBase = moduleBase + 0x03BDCCC8;
                     // CoordBaseAddr = moduleBase + 0x08FA0F78;//Possible LocalPlayer Offset
                     XCoordAddr = FindDMAAddy(hProcess, LocalPlayerOffset, { 0x30 });
@@ -1112,25 +1092,142 @@ int main(int, char**) {
 
 
 
-                    int initialMapId = 0;
-                    const bool hasInitialMapId = TryReadMapId(hProcess, MapIdAddr, initialMapId);
-                    SyncMapSpecificRuntimeAddresses(hasInitialMapId, initialMapId);
-                    ResolveRuntimeSignatures(hProcess, procId, moduleBase, initialMapId);
-                    //5B F5 ?? ?? ?? ?? ?? ?? 06 ?? ?? ?? F7 7F
 
+                    /*
+                    if (MapIdAddr != 0 && MWeaponAddr != 0)
+                    {
+                        int CurrentMapId2 = 0;
+                        int CurrentWeapId2 = 0;
 
+                        ReadProcessMemory(hProcess, (LPCVOID)MapIdAddr, &CurrentMapId2, sizeof(CurrentMapId2), nullptr);
+                        ReadProcessMemory(hProcess, (LPCVOID)MWeaponAddr, &CurrentWeapId2, sizeof(CurrentWeapId2), nullptr);
 
+                        printf("MapId: %d | WeapId: %d\n", CurrentMapId2, CurrentWeapId2);  // are these right?
 
-                  //  TWeaponAddr = FindDMAAddy(hProcess, TableBase, { 0x954 });
+                        if (
+                            (CurrentMapId2 == 1683975546 || CurrentMapId2 == 1952411002) &&
+                            (CurrentWeapId2 == 246 || CurrentWeapId2 == 241)
+                            )
+                        {
+                            uintptr_t found = FindPatternEx(
+                                hProcess,
+                                "\x9C\x50\xE5\xCB\x00\x00\x00\x00",
+                                "xxxxxxxx"
+                            );
 
+                            printf("BankAddr found: 0x%llX\n", found);  // is it 0?
 
-
-
-                    //GoldTU8E's name base = blackops3.exe+37C49E0
+                            if (found != 0)
+                                BankAddr = found - 0x28;
+                        }
                     }
-                }
-                else {
-                    procId = 0;
+                    */
+
+                    // Pattern 1
+                    /*
+                    const BYTE pattern[] = { 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xBD,0x78,0x50,0x54,0x00,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x16 };
+                    const char mask[] = "???????xxx????x????????x";
+
+
+                    // Find the first byte of this pattern
+                    HookLastByteAddr = FindPattern(hProcess, procId, moduleBase, pattern, mask);
+
+                    */
+                    /*
+                        HookLastByteAddr = FindPattern(hProcess, procId, moduleBase,
+                        "\x00\x00\x00\x00\x00\x00\x00\xBD\x78\x50\x54\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x16",
+                        "???????xxx????x????????x");
+                    */
+
+
+                    //FindPatternEx(hProcess, "\x00\x00\x00\x00", "?? ?? ?? ?? ?? ?? ?? 00 16 88 42 55 00 00 00 00 ?? ?? ?? ??") //?? ?? ?? ?? ?? ?? ?? 00 16 88 42 55 00 00 00 00 ?? ?? ?? ??
+                    /*
+                    SpiritTimerAddr = FindPatternEx(
+                        hProcess,
+                        "\x00\x16\x88\x42\x55\x00\x00\x00\x00\x00\x00\x00\x00",
+                        "xxxxxxxxx????"
+                    );
+
+                    if (SpiritTimerAddr != 0)
+                    {
+
+                        SpiritTimerAddr -= 0x26;
+                    }
+                    */
+
+
+
+                    // HookClanByte = FindPatternEx(hProcess, "\xC4\x03\x00\x00\x00\x00\x74\xBA\x1E\x03", "xxxxxxxxxx");
+                    // HookClanByte = FindPatternEx(hProcess, "\x5B\x33\x33\x5D\x5E", "xxxxx");
+
+
+
+
+                     //placeholder = FindPattern(hProcess, procId, moduleBase, "\xC4\x03\x00\x00\x00\x00\x74\xBA\x1E\x03", "xxxxxxxxxx");
+                     //HookClanByte = FindPatternEx(hProcess, "\x5E\x33\x33\x33\x5D\x5E", "xxxxxx");
+                     //HookClanByte = FindPatternEx(hProcess, "\x5B\x33\x33\x5D\x5E", "xxxxx");
+
+                     // If the pattern is found, add an offset to access the second byte (assuming offset is correct)
+
+
+                     //11 00 00 00 00 00 00 00 57 98 68 4F 5E
+
+                    /*
+                    HookClanByte = FindPatternEx(hProcess, "\x5B\x33\x33\x5D\x5E", "xxxxx");
+
+                    if (HookClanByte != 0) {
+                        //  HookClanByte += 0x116;  // use hex offset
+
+                        HookClanByte += 0x4;
+
+
+                    }
+                    */
+
+
+
+                    // Debug - remove later
+
+
+
+                    //int CurrentMapId2 = 0;
+                   // int CurrentWeapId2 = 0;
+/*
+                    ReadProcessMemory(hProcess, (LPCVOID)MapIdAddr, &CurrentMapId2, sizeof(CurrentMapId2), nullptr);
+                    ReadProcessMemory(hProcess, (LPCVOID)MWeaponAddr, &CurrentWeapId2, sizeof(CurrentWeapId2), nullptr);
+
+                    printf("MapId: %d | WeapId: %d\n", CurrentMapId2, CurrentWeapId2);
+                    */
+
+
+
+                    //This needs isTableBuilt Check? 
+
+
+
+
+                    // TableCamoAddr = FindPatternEx(hProcess, "\xCD\x2C\xA8\x44\xAC\x4C\xB2\x43\xBE\xFF\x74\x43", "xxxxxxxxxxxx");
+                    //TableCamoAddr = sig::FindPatternEx(hProcess, "\xCD\x2C\xA8\x44\xAC\x4C\xB2\x43\xBE\xFF\x74\x43", "x?x?x?xx");
+
+                    if (TableCamoAddr != 0) {
+                        //TableCamoAddr -= 0x16C;
+                        TableCamoAddr -= 0x150;
+                    }
+
+
+
+
+
+
+
+
+
+                    //  TWeaponAddr = FindDMAAddy(hProcess, TableBase, { 0x954 });
+
+
+
+
+                      //GoldTU8E's name base = blackops3.exe+37C49E0
                 }
 
 
@@ -1144,7 +1241,7 @@ int main(int, char**) {
                 std::cout << "ClanTag sig test: " << std::hex << HookClanByte << std::endl;
                 std::cout << "ClanTag sig test2: " << std::hex << TestAddr << std::endl;
                 std::cout << "Table Sig test 1" << std::hex << TableCamoAddr << std::endl;
-                std::cout << "Bank Sig test 1" << std::hex << BankAddr << std::endl;
+                std::cout << "Spirit Addr" << std::hex << SpiritTimerAddr << std::endl;
 
 
 
@@ -1153,100 +1250,126 @@ int main(int, char**) {
                 // GoldTU8ERespawnFunction();
 
             }
-        }
+        } // end auto re-attach block
 
-
-        static float lastRuntimeSignatureRetry = 0.0f;
-        const bool shouldScanTableCamoAddress = hasFrameMapId && ShouldScanTableCamoAddress(frameMapId);
-        const bool shouldScanBankAddress = hasFrameMapId && ShouldScanBankAddress(frameMapId);
-        const bool hasUnresolvedRuntimeSignature =
-            HookClanByte == 0 ||
-            HookLastByteAddr == 0 ||
-            (shouldScanTableCamoAddress && TableCamoAddr == 0) ||
-            (shouldScanBankAddress && BankAddr == 0);
-
-        if (hasUnresolvedRuntimeSignature && hProcess && moduleBase != 0) {
-            const float currentTime = static_cast<float>(ImGui::GetTime());
-            if (currentTime - lastRuntimeSignatureRetry >= 2.0f) {
-                ResolveRuntimeSignatures(hProcess, procId, moduleBase, frameMapId);
-                lastRuntimeSignatureRetry = currentTime;
-            }
-        }
-        static bool ammoPatchApplied = false;
-        static uint32_t ammoPatchSessionId = 0;
-        if (bAmmo && (!ammoPatchApplied || ammoPatchSessionId != gTargetSessionId))
+        if (bModSpoof && ModIdAddr == 3446990455)
         {
-            const bool patchedAmmo = PatchBytes(hProcess, moduleBase + 0x27C8234, "\xC7\x84\x83\x84\x06\x00\x00\x67\x02\x00\x00\x90\x90\x90\x90", 15);
+            int u = 2502333264;
+            mem::PatchEx((BYTE*)ModIdAddr, (BYTE*)&u, sizeof(u), hProcess);
+        }
+        else
+        {
+            int o = 3446990455;
+            mem::PatchEx((BYTE*)ModIdAddr, (BYTE*)&o, sizeof(o), hProcess);
+        }
+
+        if (bHideCaption && !isCycling3)
+        {
+            mem::WriteStringEx((BYTE*)CaptionAddr, "", hProcess);
+        }
+        else if (!bHideCaption && !isCycling3)
+        {
+            mem::WriteStringEx((BYTE*)CaptionAddr, "BO3Enhanced v1.16", hProcess);
+        }
+        // if isCycling3 is true, neither block runs
+
+
+
+        if (bAmmo)
+        {
+            mem::PatchEx((BYTE*)(moduleBase + 0x27C8234), (BYTE*)"\xC7\x84\x83\x84\x06\x00\x00\x67\x02\x00\x00\x90\x90\x90\x90", 15, hProcess);
 
             int A1 = 615;
-            const bool patchedLeftPistol = PatchValue(hProcess, LeftPistolAddr, A1);
-            //Unlimited Grenades
-            const bool patchedGrenades = PatchBytes(hProcess, moduleBase + 0x27C6E9A, "\x8B\xFF", 2);
-            if (patchedAmmo && patchedLeftPistol && patchedGrenades) {
-                ammoPatchApplied = true;
-                ammoPatchSessionId = gTargetSessionId;
+            mem::PatchEx((BYTE*)LeftPistolAddr, (BYTE*)&A1, sizeof(A1), hProcess);
+            //Unlimited Grenades 
+            mem::PatchEx((BYTE*)(moduleBase + 0x27C6E9A), (BYTE*)"\x8B\xFF", 2, hProcess);
+        }
+        else
+        {
+            mem::PatchEx((BYTE*)(moduleBase + 0x27C8234), (BYTE*)"\x83\xBC\x83\x84\x06\x00\x00\x00\x75\x0B\xB8\x01\x00\x00\x00", 15, hProcess);
+
+
+            mem::PatchEx((BYTE*)(moduleBase + 0x27C6E9A), (BYTE*)"\x8B\x01", 2, hProcess);
+        }
+
+
+        if (bName)
+        {
+            bNameToggle = true;
+            //mem::WriteStringEx((BYTE*)NameAddr, "^1[DivX]SyntaX-_-", hProcess);
+            mem::WriteStringEx((BYTE*)NameAddr, "Danny", hProcess);
+        }
+        else
+        {
+            bNameToggle = false;
+            mem::WriteStringEx((BYTE*)NameAddr, "^1SyntaX-_-", hProcess);
+        }
+
+
+        if (isPatched)
+        {
+            mem::PatchEx((BYTE*)(moduleBase + 0x27EB255), (BYTE*)"\x75\x06", 2, hProcess);
+        }
+        else
+        {
+            mem::PatchEx((BYTE*)(moduleBase + 0x27EB255), (BYTE*)"\x74\x06", 2, hProcess);
+        }
+
+        if (bClan)
+        {
+
+
+
+            /*
+            //size_t Offset = 116;
+            BYTE camoValue = 0x42;
+           // mem::PatchEx((BYTE*)(HookClanByte ), &camoValue, sizeof(camoValue), hProcess);
+            mem::WriteStringEx((BYTE*)(HookClanByte), "3arc", hProcess);
+
+
+        */
+
+
+        /*
+        BYTE targetByte = 0x44;
+        BYTE buffer[256] = { 0 };
+
+        SIZE_T bytesRead = 0;
+        if (ReadProcessMemory(hProcess, (LPCVOID)(HookClanByte + targetByte), buffer, sizeof(buffer), &bytesRead)) {
+            for (size_t i = 0; i < bytesRead; ++i) {
+                if (buffer[i] == targetByte) {
+                    std::cout << "Found 0x44 at offset " << (targetByte + i) << std::endl;
+                    break;
+                }
             }
         }
-        else if (!bAmmo)
+        else {
+            std::cerr << "Failed to read process memory. Error: " << GetLastError() << std::endl;
+        }
+        */
+
+
+        // mem::WriteStringEx((BYTE*)(HookClanByte + Offset), "^133", hProcess);
+        }
+        else
         {
-            //    mem::PatchEx((BYTE*)(moduleBase + 0x27C8234), (BYTE*)"\x83\xBC\x83\x84\x06\x00\x00\x00\x75\x0B\xB8\x01\x00\x00\x00", 15, hProcess);
 
-
-             //   mem::PatchEx((BYTE*)(moduleBase + 0x27C6E9A), (BYTE*)"\x8B\x01", 2, hProcess);
-            ammoPatchApplied = false;
-            ammoPatchSessionId = 0;
         }
 
 
-        static bool namePatchInitialized = false;
-        static bool previousNameEnabled = false;
-        static uintptr_t previousNameAddress = 0;
-        static uint32_t previousNameSessionId = 0;
-        if (!namePatchInitialized ||
-            previousNameEnabled != bName ||
-            previousNameAddress != NameAddr ||
-            previousNameSessionId != gTargetSessionId)
-        {
-            const char* playerName = bName ? "Danny" : "^1SyntaX-_-";
-            if (WriteString(hProcess, NameAddr, playerName))
-            {
-                bNameToggle = bName;
-                previousNameEnabled = bName;
-                previousNameAddress = NameAddr;
-                previousNameSessionId = gTargetSessionId;
-                namePatchInitialized = true;
-            }
-        }
-
-
-        static bool clanBypassPatchInitialized = false;
-        static bool previousClanBypassEnabled = false;
-        static uintptr_t previousClanBypassAddress = 0;
-        static uint32_t previousClanBypassSessionId = 0;
-        PatchToggleBytesOnChange(
-            hProcess,
-            moduleBase + 0x27EB255,
-            isPatched,
-            clanBypassPatchInitialized,
-            previousClanBypassEnabled,
-            previousClanBypassAddress,
-            previousClanBypassSessionId,
-            "\x75\x06",
-            2,
-            "\x74\x06",
-            2);
 
         ///new signature test
-        if (bCamo && HookLastByteAddr != 0)
+        if (bCamo)
         {
+            const size_t lastByteOffset = 23;
             BYTE Galaxy = 0x7D;
-            PatchValue(hProcess, HookLastByteAddr + kCamoBytePatchOffset, Galaxy);
+            mem::PatchEx((BYTE*)(HookLastByteAddr + lastByteOffset), &Galaxy, sizeof(Galaxy), hProcess);
         }
 
 
-        if (GetAsyncKeyState(VK_F4) && canPatchBankAddress)
+        if (GetAsyncKeyState(VK_F4))
         {
-            PatchValue(hProcess, BankAddr, m1);
+            mem::PatchEx((BYTE*)BankAddr, (BYTE*)&m1, sizeof(m1), hProcess);
         }
 
 
@@ -1275,70 +1398,96 @@ int main(int, char**) {
         }
         */
 
-        static bool svCheatsPatchInitialized = false;
-        static bool previousSvCheatsEnabled = false;
-        static uintptr_t previousSvCheatsAddress = 0;
-        static uint32_t previousSvCheatsSessionId = 0;
-        PatchToggleValueOnChange(
-            hProcess,
-            SvCheatsAddr,
-            bSvCheats,
-            svCheatsPatchInitialized,
-            previousSvCheatsEnabled,
-            previousSvCheatsAddress,
-            previousSvCheatsSessionId,
-            ON,
-            OFF);
-        static bool rapidPatchInitialized = false;
-        static bool previousRapidEnabled = false;
-        static uintptr_t previousRapidMainAddress = 0;
-        static uintptr_t previousRapidShotgunsAddress = 0;
-        static uint32_t previousRapidSessionId = 0;
-        const uintptr_t rapidMainAddress = moduleBase + 0x27B6353;
-        const uintptr_t rapidShotgunsAddress = moduleBase + 0x27C6519;
-        if (!rapidPatchInitialized ||
-            previousRapidEnabled != bRapid ||
-            previousRapidMainAddress != rapidMainAddress ||
-            previousRapidShotgunsAddress != rapidShotgunsAddress ||
-            previousRapidSessionId != gTargetSessionId)
+        if (bSvCheats)
         {
-            const bool patchedMain = PatchBytes(
-                hProcess,
-                rapidMainAddress,
-                bRapid ? "\xC7\x04\x38\x00\x00\x00\x00\x90\x90\x90" : "\x89\x0C\x38\x44\x38\xAE\x68\x0E\x00\x00",
-                10);
-            const bool patchedShotguns = PatchBytes(
-                hProcess,
-                rapidShotgunsAddress,
-                bRapid ? "\xC7\x40\x2C\x02\x00\x00\x00\x90\x90" : "\x44\x08\x70\x2C\xE8\x5E\xB4\x00\x00",
-                9);
-
-            if (patchedMain && patchedShotguns)
-            {
-                rapidPatchInitialized = true;
-                previousRapidEnabled = bRapid;
-                previousRapidMainAddress = rapidMainAddress;
-                previousRapidShotgunsAddress = rapidShotgunsAddress;
-                previousRapidSessionId = gTargetSessionId;
-            }
+            //   int C1 = 285587035;
+            mem::PatchEx((BYTE*)SvCheatsAddr, (BYTE*)&ON, sizeof(ON), hProcess);
+        }
+        else
+        {
+            // int C1 = 694749996;
+            mem::PatchEx((BYTE*)SvCheatsAddr, (BYTE*)&OFF, sizeof(OFF), hProcess);
         }
 
-        static bool instantPatchInitialized = false;
-        static bool previousInstantEnabled = false;
-        static uintptr_t previousInstantAddress = 0;
-        static uint32_t previousInstantSessionId = 0;
-        PatchToggleBytesOnChange(
-            hProcess,
-            moduleBase + 0x26279A5,
-            bInstant,
-            instantPatchInitialized,
-            previousInstantEnabled,
-            previousInstantAddress,
-            previousInstantSessionId,
-            "\x0F\x8C",
-            2,
-            "\x0F\x8F",
-            2);
+
+
+        if (bRapid)//Need logic for burst fire weapons
+        {
+            mem::PatchEx((BYTE*)(moduleBase + 0x27B6353), (BYTE*)"\xC7\x04\x38\x00\x00\x00\x00\x90\x90\x90", 10, hProcess);
+            mem::PatchEx((BYTE*)(moduleBase + 0x27C6519), (BYTE*)"\xC7\x40\x2C\x02\x00\x00\x00\x90\x90", 9, hProcess);//Shotguns
+
+
+        }
+        else
+        {
+            mem::PatchEx((BYTE*)(moduleBase + 0x27B6353), (BYTE*)"\x89\x0C\x38\x44\x38\xAE\x68\x0E\x00\x00", 10, hProcess);
+            mem::PatchEx((BYTE*)(moduleBase + 0x27C6519), (BYTE*)"\x44\x08\x70\x2C\xE8\x5E\xB4\x00\x00", 9, hProcess);
+
+        }
+
+        if (bInstant)
+        {
+
+            mem::PatchEx((BYTE*)(moduleBase + 0x26279A5), (BYTE*)"\x0F\x8C", 2, hProcess);
+
+        }
+        else
+        {
+            mem::PatchEx((BYTE*)(moduleBase + 0x26279A5), (BYTE*)"\x0F\x8F", 2, hProcess);
+        }
+
+
+
+
+
+        // Add Logic to keep this off if map id changes  7/20/25 Added
+
+        ///*
+
+        /*
+        int currentMapId = 0;
+        if (hProcess && MapIdAddr != 0) {
+            ReadProcessMemory(hProcess, (LPCVOID)MapIdAddr, &currentMapId, sizeof(currentMapId), nullptr);
+
+            switch (currentMapId) {
+            case 1683975546: // Die Rise
+                /*
+                if (!bRewardGiven)
+                {
+                    if (ReadProcessMemory(hProcess, (LPCVOID)GoldTU8EHealthAddr, &GoldTU8EHealth, sizeof(GoldTU8EHealth), nullptr))
+                    {
+                        if (GoldTU8EHealth == 0) // GoldTU8E Dead
+                        {
+                            // Reward: weapon upgrade
+                            int R1 = 264;
+                            mem::PatchEx((BYTE*)QWeaponAddr, (BYTE*)&R1, sizeof(R1), hProcess);
+
+                            // Reward: gold camo
+                            int camoVal = 15;
+                            mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&camoVal, sizeof(camoVal), hProcess);
+
+                            bRewardGiven = true; // Lock forever
+                        }
+                    }
+
+
+                }
+                break;
+            case 1952411002: // Tranzit
+
+                break;
+            default:
+                currentWeaponList = &weaponList;
+                break;
+            }
+        }
+        */
+
+
+
+
+
+        //*/
 
 
 
@@ -1350,13 +1499,12 @@ int main(int, char**) {
             static SHORT prevF4State = 0;
 
             int N1 = 0;
-            if (CanPatchAddress(hProcess, MWeaponAddr))
-                ReadProcessMemory(hProcess, (LPCVOID)MWeaponAddr, &N1, sizeof(N1), nullptr);
+            ReadProcessMemory(hProcess, (LPCVOID)MWeaponAddr, &N1, sizeof(N1), nullptr);
             SHORT currentF3State = GetAsyncKeyState(VK_F3);
             if ((currentF3State & 0x8000) && !(prevF3State & 0x8000))
             {
                 N1--;
-                PatchValue(hProcess, MWeaponAddr, N1);
+                mem::PatchEx((BYTE*)MWeaponAddr, (BYTE*)&N1, sizeof(N1), hProcess);
             }
             prevF3State = currentF3State;
 
@@ -1364,7 +1512,7 @@ int main(int, char**) {
             if ((currentF4State & 0x8000) && !(prevF4State & 0x8000))
             {
                 N1++;
-                PatchValue(hProcess, MWeaponAddr, N1);
+                mem::PatchEx((BYTE*)MWeaponAddr, (BYTE*)&N1, sizeof(N1), hProcess);
             }
             prevF4State = currentF4State;
         }
@@ -1376,13 +1524,12 @@ int main(int, char**) {
             static SHORT prevF4State = 0;
 
             int N1 = 0;
-            if (CanPatchAddress(hProcess, CamoAddr2))
-                ReadProcessMemory(hProcess, (LPCVOID)CamoAddr2, &N1, sizeof(N1), nullptr);
+            ReadProcessMemory(hProcess, (LPCVOID)CamoAddr2, &N1, sizeof(N1), nullptr);
             SHORT currentF3State = GetAsyncKeyState(VK_F3);
             if ((currentF3State & 0x8000) && !(prevF3State & 0x8000))
             {
                 N1--;
-                PatchValue(hProcess, CamoAddr2, N1);
+                mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&N1, sizeof(N1), hProcess);
             }
             prevF3State = currentF3State;
 
@@ -1390,7 +1537,7 @@ int main(int, char**) {
             if ((currentF4State & 0x8000) && !(prevF4State & 0x8000))
             {
                 N1++;
-                PatchValue(hProcess, CamoAddr2, N1);
+                mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&N1, sizeof(N1), hProcess);
             }
             prevF4State = currentF4State;
         }
@@ -1401,43 +1548,29 @@ int main(int, char**) {
             if (GetAsyncKeyState(0x45))  // key is down
             {
                 int N1 = 1;
-                PatchValue(hProcess, NoclipAddr, N1);
+                mem::PatchEx((BYTE*)NoclipAddr, (BYTE*)&N1, sizeof(N1), hProcess);
             }
             else
             {
                 int N0 = 0;
-                PatchValue(hProcess, NoclipAddr, N0);
+                mem::PatchEx((BYTE*)NoclipAddr, (BYTE*)&N0, sizeof(N0), hProcess);
             }
         }
 
-        static bool healthPatchInitialized = false;
-        static bool previousHealthEnabled = false;
-        static uintptr_t previousHealthAddress = 0;
-        static uint32_t previousHealthSessionId = 0;
-        const int godEnabled = 12297;
-        const int godDisabled = 12296;
-        PatchToggleValueOnChange(
-            hProcess,
-            GodAddr,
-            bHealth,
-            healthPatchInitialized,
-            previousHealthEnabled,
-            previousHealthAddress,
-            previousHealthSessionId,
-            godEnabled,
-            godDisabled);
+        if (bHealth && GodAddr != 0) {
+            int God = 12297;
+            mem::PatchEx((BYTE*)GodAddr, (BYTE*)&God, sizeof(God), hProcess);
+        }
+        else
+        {
+            int God = 12296;
+            mem::PatchEx((BYTE*)GodAddr, (BYTE*)&God, sizeof(God), hProcess);
+        }
 
-        static bool goldTU8EHealthResetApplied = false;
         if (bGoldTU8EHealth && GoldTU8EHealthAddr != 0) {
-            goldTU8EHealthResetApplied = false;
             const int uHealth = 13337;
-            static float lastGoldTU8EHealthPatch = 0.0f;
-            const float currentTime = static_cast<float>(ImGui::GetTime());
-            if (currentTime - lastGoldTU8EHealthPatch >= 0.1f)
-            {
-                PatchValue(hProcess, GoldTU8EHealthAddr, uHealth);
-                lastGoldTU8EHealthPatch = currentTime;
-            }
+            Sleep(5);
+            mem::PatchEx((BYTE*)GoldTU8EHealthAddr, (BYTE*)&uHealth, sizeof(uHealth), hProcess);
 
 
 
@@ -1454,7 +1587,7 @@ int main(int, char**) {
 
                 const std::string& currentTarget = targets[targetIndex];
 
-                PatchBytes(hProcess, HookClanByte, currentTarget.c_str(), currentTarget.size());
+                mem::PatchEx((BYTE*)HookClanByte, (BYTE*)currentTarget.c_str(), static_cast<unsigned int>(currentTarget.size()), hProcess);
 
                 lastCycleTime = currentTime;
             }
@@ -1473,9 +1606,27 @@ int main(int, char**) {
 
                 const std::string& currentTarget2 = targets2[targetIndex2];
 
-                PatchBytes(hProcess, GoldTU8ENameAddr, currentTarget2.c_str(), currentTarget2.size());
+                mem::PatchEx((BYTE*)GoldTU8ENameAddr, (BYTE*)currentTarget2.c_str(), static_cast<unsigned int>(currentTarget2.size()), hProcess);
 
                 lastCycleTime2 = currentTime2;
+            }
+
+        }
+
+
+        if (isCycling3) {
+            const float currentTime3 = static_cast<float>(ImGui::GetTime());  // Get the current time in seconds
+
+            // Only update targetIndex if enough time has passed since the last cycle
+            if (currentTime3 - lastCycleTime3 >= cycleInterval3) {
+
+                targetIndex3 = (targetIndex3 + 1) % 9;
+
+                const std::string& currentTarget3 = targets3[targetIndex3];
+
+                mem::PatchEx((BYTE*)CaptionAddr, (BYTE*)currentTarget3.c_str(), static_cast<unsigned int>(currentTarget3.size()), hProcess);
+
+                lastCycleTime3 = currentTime3;
             }
 
         }
@@ -1483,39 +1634,169 @@ int main(int, char**) {
         if (!bGoldTU8EHealth && GoldTU8EHealthAddr != 0)
         {
             int UHealth = 100;
-            if (!goldTU8EHealthResetApplied && PatchValue(hProcess, GoldTU8EHealthAddr, UHealth))
-                goldTU8EHealthResetApplied = true;
+            mem::PatchEx((BYTE*)GoldTU8EHealthAddr, (BYTE*)&UHealth, sizeof(UHealth), hProcess);
             //mem::PatchEx((BYTE*)(moduleBase + 0x1CFF64), (BYTE*)"\xC7\x86\x70\x02\x00\x00\x08\x00\x00\x00", 10, hProcess);
            // mem::PatchEx((BYTE*)(moduleBase + 0x2BA72F), (BYTE*)"\xFF\x48\x04", 3, hProcess);
         }
+
+
         if (bToggleMW && MWeaponAddr != 0)
         {
-            PatchValue(hProcess, MWeaponAddr, MWeaponId);
+            mem::PatchEx((BYTE*)MWeaponAddr, (BYTE*)&MWeaponId, sizeof(MWeaponId), hProcess);
         }
 
         if (bToggleQW && QWeaponAddr != 0)
         {
-            PatchValue(hProcess, QWeaponAddr, QWeaponId);
+            mem::PatchEx((BYTE*)QWeaponAddr, (BYTE*)&QWeaponId, sizeof(QWeaponId), hProcess);
         }
 
         if (bToggleWW && WWeaponAddr != 0)
         {
-            PatchValue(hProcess, WWeaponAddr, WWeaponId);
+            mem::PatchEx((BYTE*)WWeaponAddr, (BYTE*)&WWeaponId, sizeof(WWeaponId), hProcess);
         }
 
         if (bToggleEW && EWeaponAddr != 0)
         {
-            PatchValue(hProcess, EWeaponAddr, EWeaponId);
+            mem::PatchEx((BYTE*)EWeaponAddr, (BYTE*)&EWeaponId, sizeof(EWeaponId), hProcess);
         }
+
+
+
+
         if (bToggleScore && ScoreAddr != 0)
         {
-            PatchValue(hProcess, ScoreAddr, ScoreId);
+            mem::PatchEx((BYTE*)ScoreAddr, (BYTE*)&ScoreId, sizeof(ScoreId), hProcess);
         }
         else
         {
 
         }
-        // bool isInMenu = true;   // optional flag if you later detect menu vs in-game
+        //Recode this for lobby id detection but it serves it's purpose
+        bool ClanFound = false;
+
+        if (bClan && !ClanFound)
+        {
+            /*
+            HookClanByte = FindPatternEx(hProcess, "\x5B\x33\x33\x5D\x5E", "xxxxx");
+
+            if (HookClanByte != 0)
+            {
+                HookClanByte += 0x4;
+                ClanFound = true;
+            }
+            */
+        }
+
+
+
+        if (MapIdAddr != 0 && MWeaponAddr != 0)
+        {
+            char CurrentMapStr[16] = {};
+            int CurrentWeapId2 = 0;
+
+            ReadProcessMemory(hProcess, (LPCVOID)MapIdAddr, CurrentMapStr, sizeof(CurrentMapStr) - 1, nullptr);
+            CurrentMapStr[sizeof(CurrentMapStr) - 1] = '\0'; // ensure null-termination
+            ReadProcessMemory(hProcess, (LPCVOID)MWeaponAddr, &CurrentWeapId2, sizeof(CurrentWeapId2), nullptr);
+
+            bool bValidMap = (strcmp(CurrentMapStr, "zm_die") == 0 || strcmp(CurrentMapStr, "zm_tra") == 0);
+            bool bValidWeapon = (CurrentWeapId2 == 246 || CurrentWeapId2 == 241);
+
+            // Use a hash of the string as a change-detector (same role as the old int comparison)
+            int CurrentMapId2 = 0;
+            for (int i = 0; CurrentMapStr[i] != '\0'; ++i)
+                CurrentMapId2 = CurrentMapId2 * 31 + static_cast<unsigned char>(CurrentMapStr[i]);
+
+            if (CurrentMapId2 != LastMapId)
+            {
+                BankAddr = 0;
+                LastMapId = CurrentMapId2;
+                bWaitingForMap = true;
+                bScanInProgress = false;
+                // system("cls");
+                printf("[MAP CHANGE] New Map: %s | BankAddr reset\n", CurrentMapStr);
+            }
+
+            if (!bValidMap)
+            {
+                BankAddr = 0;
+                ClipIdAddr = 7;
+            }
+
+            if (!bValidWeapon)
+            {
+                if (BankAddr != 0)
+                {
+                    BankAddr = 0;
+                    //   system("cls");
+                    printf("[WEAPON CHANGE] WeapId: %d is not valid | BankAddr reset\n", CurrentWeapId2);
+                }
+                bWaitingForMap = true;
+                bScanInProgress = false;
+            }
+
+            if (bWaitingForMap && BankAddr == 0 && bValidMap && bValidWeapon && !bScanInProgress)
+            {
+                bScanInProgress = true;
+                g_ScanParams.hProc = hProcess;
+                printf("[SCAN] Conditions met - launching scan thread...\n");
+
+                HANDLE hThread = CreateThread(nullptr, 0, ScanThread, &g_ScanParams, 0, nullptr);
+                if (hThread)
+                    CloseHandle(hThread);
+            }
+
+            // ── Spirit timer scan: zm_prison + weapon 143 ─────────────────────
+            bool bPrisonMap = (strcmp(CurrentMapStr, "zm_prison") == 0);
+            //bool bSpiritWeapon = (CurrentWeapId2 == 191);//143 is afterlife hands
+
+            if (!bPrisonMap)
+            {
+                if (SpiritTimerAddr != 0)
+                {
+                    SpiritTimerAddr = 0;
+                    bWaitingForSpirit = true;
+                    bSpiritScanInProgress = false;
+                    printf("[SPIRIT] Map or weapon changed — SpiritTimerAddr reset\n");
+                }
+            }
+
+            if (bWaitingForSpirit && SpiritTimerAddr == 0 && bPrisonMap && !bSpiritScanInProgress)
+            {
+                bSpiritScanInProgress = true;
+                g_ScanParams.hProc = hProcess;
+                printf("[SPIRIT SCAN] Conditions met - launching spirit scan thread...\n");
+
+                HANDLE hSpiritThread = CreateThread(nullptr, 0, SpiritScanThread, &g_ScanParams, 0, nullptr);
+                if (hSpiritThread)
+                    CloseHandle(hSpiritThread);
+            }
+
+            //A5 9B 56 DF 00 00 00 00 87
+            // ── Mod scan: zm_core (main menu map) ────────────────────────────────
+            bool bMenuMap = (strcmp(CurrentMapStr, "core_frontend") == 0);
+
+            if (!bMenuMap)
+            {
+                if (ModIdAddr != 0)
+                {
+                    ModIdAddr = 0;
+                    bWaitingForMod = true;
+                    bModScanInProgress = false;
+                    printf("[MOD SCAN] Map changed — ModIdAddr reset\n");
+                }
+            }
+
+            if (bWaitingForMod && ModIdAddr == 0 && bMenuMap && !bModScanInProgress)
+            {
+                bModScanInProgress = true;
+                g_ScanParams.hProc = hProcess;
+                printf("[MOD SCAN] Conditions met - launching mod scan thread...\n");
+
+                HANDLE hModThread = CreateThread(nullptr, 0, ModScanThread, &g_ScanParams, 0, nullptr);
+                if (hModThread)
+                    CloseHandle(hModThread);
+            }
+        }
 
         ImGui::Render();
 
@@ -1530,7 +1811,19 @@ int main(int, char**) {
         glfwSwapBuffers(window);
     }
 
-    CloseTargetProcess();
+    stopThread.store(true);
+    stopThread2.store(true);
+    stopThread3.store(true);
+
+    if (rainbowThread.joinable())
+        rainbowThread.join();
+    if (rainbowThread2.joinable())
+        rainbowThread2.join();
+    if (rainbowThread3.joinable())
+        rainbowThread3.join();
+
+    if (hProcess)
+        CloseHandle(hProcess);
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
