@@ -34,6 +34,9 @@ Desktop.ini
 # Local research/drop-zone artifacts
 Local Assets/
 AGENTS.md
+profiles/bo3-vulkan/downloads/
+profiles/bo3-vulkan/logs/*
+!profiles/bo3-vulkan/logs/.gitkeep
 
 # Reversa
 .agents/

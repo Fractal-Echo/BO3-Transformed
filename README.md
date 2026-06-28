@@ -34,3 +34,9 @@ WSL is not currently configured as the compiler environment for this project. Tr
 - Separate UI, process attach, address resolution, and feature patch logic.
 - Keep changes small enough to verify against BO3 behavior.
 - Avoid frame generation work until frametime bottlenecks are measured.
+
+## Vulkan Experiment Lane
+
+The first cross-platform graphics lane lives in `profiles/bo3-vulkan/`.
+
+Start with `profiles/bo3-vulkan/README.md`, then use the benchmark and safety checklists before testing DXVK, Wine, RM11 Pro, frame generation, or screen-space ray effects.
