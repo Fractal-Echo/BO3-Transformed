@@ -58,6 +58,22 @@ Decision:
 
 ## Windows Capture
 
+Fast path for a labeled Reversa training/eval capture:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run-bo3-training-capture.ps1 `
+  -Label "native-asus240-zombies-run1" `
+  -DurationSeconds 180 `
+  -DelaySeconds 60 `
+  -Notes "Map/route/resolution/cap here"
+```
+
+That script captures display state, process/GPU telemetry, PresentMon frame
+times, summaries, a manifest, and a run note under `profiles\bo3-vulkan\logs\`.
+Use it after BO3 is already at the test scene.
+
+Manual path:
+
 1. Start the game through `launch-windows-dxvk.ps1`.
 2. Load the same private Zombies map.
 3. Wait 60 seconds after load for shader compilation to settle.

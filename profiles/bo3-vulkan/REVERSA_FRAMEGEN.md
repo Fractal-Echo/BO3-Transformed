@@ -31,6 +31,13 @@ This profile turns the current BO3 work into a Reversa-owned performance lab. Th
   - GPU utilization average: 58.55%, max 96%.
   - GPU power average: 183.33 W.
 - Process telemetry comparison showed native used less private memory than DXVK, while native CPU sampling was higher and noisier. That is useful context, but frame-time data is the stronger decision signal.
+- Reversa native wrapper v0.4 throttled-HUD validation:
+  - Comparison artifact: `bo3-run1-vs-run2-vs-run3-presentmon-summary.md`.
+  - Run 1 before throttling: 76.86 FPS average, p95 18.4528 ms, p99 23.263 ms, 1274 frames over 16.67 ms.
+  - Run 2 after throttling: 83.83 FPS average, p95 16.0187 ms, p99 19.1528 ms, 501 frames over 16.67 ms.
+  - Run 3 after throttling: 86.91 FPS average, p95 14.8837 ms, p99 17.1332 ms, 211 frames over 16.67 ms.
+  - Process CPU average on the one-core scale stepped down across the same captures: 582.84 -> 461.45 -> 382.05.
+  - Decision: keep the v0.4 overlay throttling patch. The direction repeated across two post-patch captures, with fewer bad frames and lower wrapper-side sampling pressure.
 
 ## Local Tooling We Already Have
 
@@ -64,6 +71,7 @@ WEIGH IT AGAIN = TESSERACT:
 | DXVK + LSFG | BO3 D3D11 -> DXVK -> Vulkan -> Lossless Scaling | External | Windows proxy for future Linux/RM11 behavior. |
 | Native + Special K | BO3 D3D11 -> Special K -> Windows D3D11 | None first | Frame pacing and limiter experiments. |
 | DXVK + post stack | BO3 D3D11 -> DXVK -> Vulkan layer/post | External | Later shader/ray-effect experiments only after baseline stability. |
+| DXVK + Vulkan framegen | BO3 D3D11 -> DXVK/Reversa Vulkan -> Vulkan framegen path | Vulkan-side | Future RTX 5090 lane. Keep this behind stable DXVK timing and clean SDK/provenance review. |
 
 ## Commands
 
@@ -125,6 +133,21 @@ Do not enable frame generation yet. The next controlled test is native D3D11 on 
 After native 240 Hz has its own three-run baseline, test Lossless Scaling as an external layer over the better renderer path.
 
 Only after that should Reversa classify routes or produce a training/eval pack. A custom frame-generation model is a later research project and should use open/provenance-clean video data for training. BO3 captures can be private evaluation artifacts, not redistributed training assets.
+
+## Vulkan Framegen Gate
+
+The RTX 5090 frame-generation lane belongs after the wrapper is stable:
+
+- Confirm T7 compatibility mode does not worsen native/DXVK frame timing.
+- Re-enable DXVK as the Vulkan bridge and capture three clean PresentMon runs.
+- Choose the framegen path from clean SDK/licensed components, not copied game
+  binaries or untracked DLL drops.
+- Record exact DLL hashes and settings in the run notes.
+- Compare p95/p99 frame time, input latency feel, HUD artifacts, and capture
+  behavior. Do not judge by peak FPS alone.
+
+If this lane wins, Reversa should expose it as a Vulkan profile switch rather
+than a BO3 memory patch.
 
 ## Safety Boundary
 

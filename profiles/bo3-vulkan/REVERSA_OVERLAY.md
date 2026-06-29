@@ -1,8 +1,10 @@
 # Reversa DXGI Overlay
 
 This is the first Reversa-owned overlay lane for BO3 experiments. It is a local
-`dxgi.dll` proxy that forwards DXGI exports to a copied `dxgi_system.dll` and
-starts a small transparent overlay window inside the BO3 process.
+`dxgi.dll` / `d3d11.dll` proxy pair. The DXGI proxy forwards exports to a copied
+`dxgi_system.dll` and owns the transparent overlay window. The D3D11 proxy
+forwards exports to a copied `d3d11_system.dll` and hooks the BO3 swap-chain
+creation path for frame telemetry.
 
 It is not an EXE patch, anti-cheat bypass, network mod, trainer, or stealth
 injector. Keep it private-lobby and reversible.
@@ -20,10 +22,64 @@ benchmark scripts pointed at the game window instead of the overlay surface.
 - Current game-window rect.
 - Display handle and refresh rate.
 
+## What v0.2 Adds
+
+- In-process swap-chain `Present` / `Present1` telemetry.
+- Frame-time last sample, EMA, and FPS estimate inside the overlay.
+- A Reversa partner-menu shell that mirrors the external ConsoleIX menu
+  categories without firing memory patches from the wrapper.
+- A D3D11 proxy that intercepts BO3's `D3D11CreateDevice` path, installs DXGI
+  factory hooks, wraps the returned swap chain, and shares present counters with
+  the overlay through a per-process named mapping.
+
+## What v0.3 Adds
+
+- A transparent top-band HUD instead of a filled panel.
+- High-contrast outlined text so the overlay stays readable without hiding the
+  lobby, menu, or Zombies view behind a black rectangle.
+
+## What v0.4 Adds
+
+- Lower overlay overhead during captures: hotkeys poll at 100 ms, lightweight
+  repaint refresh is capped at 500 ms, and expensive window/process/display
+  stats refresh at 1000 ms.
+- Menu and HUD toggle actions still force an immediate repaint, so interaction
+  stays responsive without polling process/thread/display counters four times a
+  second.
+- Validation artifacts:
+  `profiles\bo3-vulkan\logs\bo3-run1-vs-run2-vs-run3-presentmon-summary.md`
+  and `profiles\bo3-vulkan\logs\bo3-run1-vs-run2-vs-run3-process-summary.md`.
+
+## What v0.5 Adds
+
+- Non-blocking present telemetry publication. The render path now tries to
+  acquire the shared telemetry slot and skips the publish if the overlay or
+  another proxy owns it.
+- DXGI fallback telemetry also avoids waiting on its local stats lock, so the
+  wrapper cannot hold a frame while publishing HUD counters.
+
+## What v0.6 Adds
+
+- T7 companion detection for `T7InternalWS.dll` and `T7WSBootstrapper.dll`.
+- T7 compatibility mode defaults on when those companion DLLs are present.
+- In compatibility mode, Reversa keeps the DXGI overlay path but skips the
+  D3D11 factory vtable hook path. T7 owns the BO3 safety/network patch surface;
+  Reversa owns graphics telemetry and overlay.
+- Deploy writes `reversa-wrapper-stack.json` into the game directory with
+  hashes for active Reversa, system-forwarder, and T7 companion DLLs.
+
 Hotkeys:
 
+- `F9`: toggle the Reversa partner menu.
 - `F10`: toggle overlay text.
 - `F11`: toggle click-through mode.
+- `Left` / `Right`: change partner-menu tab.
+- `Up` / `Down`: select a partner-menu item.
+- `Space`: toggle the selected partner-menu item as local armed state.
+
+The partner menu is intentionally local state only in this wrapper. ConsoleIX
+still owns process attach, address resolution, and patch writes until those
+actions are split behind shared validation guards.
 
 ## Build
 
@@ -35,6 +91,7 @@ Build output:
 
 ```text
 profiles\bo3-vulkan\bin\reversa-overlay\dxgi.dll
+profiles\bo3-vulkan\bin\reversa-overlay\d3d11.dll
 ```
 
 ## Deploy
@@ -48,11 +105,26 @@ powershell -ExecutionPolicy Bypass -File .\profiles\bo3-vulkan\deploy-reversa-ov
 The deploy script copies:
 
 - `profiles\bo3-vulkan\bin\reversa-overlay\dxgi.dll` to the game directory.
+- `profiles\bo3-vulkan\bin\reversa-overlay\d3d11.dll` to the game directory.
 - `C:\Windows\System32\dxgi.dll` to the game directory as `dxgi_system.dll`.
+- `C:\Windows\System32\d3d11.dll` to the game directory as `d3d11_system.dll`.
 
-If a staged DXVK `dxgi.dll` is active, the deploy script renames it to
-`dxgi.dll.dxvk-disabled`. If an unknown `dxgi.dll` is present, the script refuses
+If a staged DXVK `dxgi.dll` or `d3d11.dll` is active, the deploy script renames
+it to `*.dxvk-disabled`. If an unknown active DLL is present, the script refuses
 to overwrite it.
+
+When T7 companion files are present, the deploy script records that state in
+`reversa-wrapper-stack.json`. Runtime overrides are available for one-off A/B
+tests:
+
+```powershell
+$env:REVERSA_T7_COMPAT = "0"              # force compatibility mode off
+$env:REVERSA_T7_COMPAT = "1"              # force compatibility mode on
+$env:REVERSA_D3D11_FACTORY_HOOKS = "1"    # force Reversa D3D11 hooks on
+$env:REVERSA_D3D11_FACTORY_HOOKS = "0"    # force Reversa D3D11 hooks off
+```
+
+Default test posture: leave those variables unset.
 
 ## Disable
 
@@ -62,9 +134,9 @@ Exit BO3 first, then run:
 powershell -ExecutionPolicy Bypass -File .\profiles\bo3-vulkan\disable-reversa-overlay.ps1 -GameDir "D:\SteamLibrary\steamapps\common\Call of Duty Black Ops III"
 ```
 
-The disable script verifies the active `dxgi.dll` hash matches the staged Reversa
-overlay before renaming it to `dxgi.dll.reversa-disabled`. It also removes
-`dxgi_system.dll`.
+The disable script verifies active `dxgi.dll` and `d3d11.dll` hashes match the
+staged Reversa DLLs before renaming them to `*.reversa-disabled`. It also
+removes `dxgi_system.dll` and `d3d11_system.dll`.
 
 ## Kill Switch
 
@@ -77,6 +149,7 @@ $env:REVERSA_OVERLAY_DISABLE = "1"
 
 ## Next Steps
 
-v0.2 should hook the swap-chain path in a controlled way so the overlay can show
-true in-game frame timing without depending on external PresentMon captures. Do
-that after v0.1 proves stable in a private Zombies run.
+Move shared ConsoleIX labels, map guards, weapon guards, and address validation
+into a common module that both the external menu and wrapper can consume. After
+that, the wrapper can send guarded commands instead of directly owning process
+patch logic.

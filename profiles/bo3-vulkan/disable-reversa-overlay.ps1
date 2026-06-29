@@ -5,37 +5,55 @@ param(
 $ErrorActionPreference = "Stop"
 
 $profileRoot = Split-Path -Parent $PSCommandPath
-$overlayDll = Join-Path $profileRoot "bin\reversa-overlay\dxgi.dll"
+$overlayDxgi = Join-Path $profileRoot "bin\reversa-overlay\dxgi.dll"
+$overlayD3d11 = Join-Path $profileRoot "bin\reversa-overlay\d3d11.dll"
 $gameDxgi = Join-Path $GameDir "dxgi.dll"
+$gameD3d11 = Join-Path $GameDir "d3d11.dll"
 $gameSystemDxgi = Join-Path $GameDir "dxgi_system.dll"
+$gameSystemD3d11 = Join-Path $GameDir "d3d11_system.dll"
 $disabledReversa = Join-Path $GameDir "dxgi.dll.reversa-disabled"
+$disabledReversaD3d11 = Join-Path $GameDir "d3d11.dll.reversa-disabled"
 
 if (Get-Process -Name BlackOps3 -ErrorAction SilentlyContinue) {
     throw "BlackOps3.exe is running. Exit the game before disabling the Reversa overlay."
 }
 
-if (-not (Test-Path -LiteralPath $gameDxgi)) {
-    Write-Host "No active dxgi.dll overlay is present in $GameDir"
-}
-else {
-    if (-not (Test-Path -LiteralPath $overlayDll)) {
-        throw "Cannot verify active dxgi.dll because the staged overlay DLL is missing: $overlayDll"
+function Disable-ReversaDll {
+    param(
+        [string]$GameDll,
+        [string]$OverlayDll,
+        [string]$DisabledDll,
+        [string]$Name
+    )
+
+    if (-not (Test-Path -LiteralPath $GameDll)) {
+        Write-Host "No active $Name Reversa proxy is present in $GameDir"
+        return
     }
 
-    $gameHash = (Get-FileHash -LiteralPath $gameDxgi -Algorithm SHA256).Hash
-    $overlayHash = (Get-FileHash -LiteralPath $overlayDll -Algorithm SHA256).Hash
+    if (-not (Test-Path -LiteralPath $OverlayDll)) {
+        throw "Cannot verify active $Name because the staged Reversa DLL is missing: $OverlayDll"
+    }
+
+    $gameHash = (Get-FileHash -LiteralPath $GameDll -Algorithm SHA256).Hash
+    $overlayHash = (Get-FileHash -LiteralPath $OverlayDll -Algorithm SHA256).Hash
     if ($gameHash -ne $overlayHash) {
-        throw "$gameDxgi does not match the staged Reversa overlay DLL. Refusing to remove a file we did not deploy."
+        throw "$GameDll does not match the staged Reversa DLL. Refusing to remove a file we did not deploy."
     }
 
-    if (Test-Path -LiteralPath $disabledReversa) {
-        Remove-Item -LiteralPath $disabledReversa -Force
+    if (Test-Path -LiteralPath $DisabledDll) {
+        Remove-Item -LiteralPath $DisabledDll -Force
     }
-    Rename-Item -LiteralPath $gameDxgi -NewName ([IO.Path]::GetFileName($disabledReversa))
-    Write-Host "Disabled Reversa overlay -> $disabledReversa"
+    Rename-Item -LiteralPath $GameDll -NewName ([IO.Path]::GetFileName($DisabledDll))
+    Write-Host "Disabled Reversa $Name -> $DisabledDll"
 }
 
-if (Test-Path -LiteralPath $gameSystemDxgi) {
-    Remove-Item -LiteralPath $gameSystemDxgi -Force
-    Write-Host "Removed proxy dependency -> $gameSystemDxgi"
+Disable-ReversaDll -GameDll $gameDxgi -OverlayDll $overlayDxgi -DisabledDll $disabledReversa -Name "dxgi.dll"
+Disable-ReversaDll -GameDll $gameD3d11 -OverlayDll $overlayD3d11 -DisabledDll $disabledReversaD3d11 -Name "d3d11.dll"
+
+foreach ($path in @($gameSystemDxgi, $gameSystemD3d11)) {
+    if (Test-Path -LiteralPath $path) {
+        Remove-Item -LiteralPath $path -Force
+        Write-Host "Removed proxy dependency -> $path"
+    }
 }
