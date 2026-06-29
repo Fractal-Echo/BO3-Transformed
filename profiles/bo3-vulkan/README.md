@@ -18,6 +18,8 @@ The goal is to measure and tune frametime stability before experimenting with fr
 - `BENCHMARK.md` - test matrix and result log template.
 - `PRIVATE_LOBBY_SAFETY.md` - private-session safety and exploit-reduction checklist.
 - `RM11PRO_MATRIX.md` - RM11 Pro bring-up path.
+- `REVERSA_FRAMEGEN.md` - Reversa-owned framegen/upscale evidence plan.
+- `REVERSA_OVERLAY.md` - local DXGI proxy overlay experiment.
 - `bin/` - local-only DXVK DLL drop zone. DLLs are intentionally ignored by Git.
 - `logs/` - local-only run logs and benchmark captures.
 
@@ -41,7 +43,13 @@ powershell -ExecutionPolicy Bypass -File .\profiles\bo3-vulkan\launch-windows-dx
 powershell -ExecutionPolicy Bypass -File .\scripts\benchmark-bo3-process.ps1 -DurationSeconds 180
 ```
 
-4. Return the game folder to native D3D11 for baseline comparison:
+4. Capture real frame times with PresentMon:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\capture-bo3-presentmon.ps1 -DurationSeconds 180
+```
+
+5. Return the game folder to native D3D11 for baseline comparison:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\profiles\bo3-vulkan\disable-windows-dxvk.ps1 -GameDir "D:\SteamLibrary\steamapps\common\Call of Duty Black Ops III"

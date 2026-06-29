@@ -61,15 +61,38 @@ Decision:
 1. Start the game through `launch-windows-dxvk.ps1`.
 2. Load the same private Zombies map.
 3. Wait 60 seconds after load for shader compilation to settle.
-4. Run:
+4. Capture the monitor layout and refresh state:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\capture-display-state.ps1
+```
+
+5. Run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\benchmark-bo3-process.ps1 -DurationSeconds 180
 ```
 
-5. Copy the relevant DXVK logs and CSV name into the run template.
+6. Capture frame times with PresentMon:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\capture-bo3-presentmon.ps1 -DurationSeconds 180
+```
+
+7. Summarize one or more frame-time captures:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\compare-bo3-presentmon.ps1 -InputPath .\profiles\bo3-vulkan\logs\your-capture.csv
+```
+
+8. Summarize process/GPU telemetry when captured:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\summarize-bo3-process.ps1 -InputPath .\profiles\bo3-vulkan\logs\your-process-capture.csv
+```
+
+9. Copy the relevant display-state JSON, DXVK logs, process CSV, process summary, PresentMon CSV, and frame summary name into the run template.
 
 ## What Counts As Better
 
 Prefer frametime stability over peak FPS. A lower average with fewer hitches is better for BO3 Zombies than a high average with ugly spikes.
-
