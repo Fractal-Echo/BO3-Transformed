@@ -1,0 +1,2074 @@
+{
+    "schema_version":  3,
+    "generated_at":  "2026-06-28T23:59:32.8484711-05:00",
+    "enhanced_root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+    "enhanced_commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+    "transformed_root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3-Transformed",
+    "training_passes":  [
+                            {
+                                "pass_id":  "pass1",
+                                "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                "source_file_count":  31
+                            },
+                            {
+                                "pass_id":  "pass2",
+                                "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                "source_file_count":  31
+                            }
+                        ],
+    "priority_source_files":  [
+                                  "README.md",
+                                  "framework.h",
+                                  "dllmain.cpp",
+                                  "security.cpp",
+                                  "security.h",
+                                  "steam.cpp",
+                                  "linux_helper.cpp",
+                                  "T7WSBootstrapper\\dllmain.cpp"
+                              ],
+    "menu_source_files":  [
+                              "ConsoleIX.cpp",
+                              "proc.cpp",
+                              "proc.h",
+                              "Signature.cpp",
+                              "Signature.h"
+                          ],
+    "required_runtime":  "BO3Enhanced full runtime lane",
+    "compatibility_rule":  "Partner menu compatibility is valid only after Reversa detects the BO3Enhanced lane or an explicitly selected BO3Enhanced test profile.",
+    "lessons":  [
+                    {
+                        "id":  "friend_menu_required_runtime",
+                        "lesson":  "The partner menu depends on BO3Enhanced as a full runtime contract, not just a few copied offsets.",
+                        "transformed_action":  "Detect the BO3Enhanced lane explicitly and keep menu compatibility features behind that detected contract.",
+                        "hit_count":  28,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  14
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  14
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1468,
+                                             "text":  "MDT_Define_FASTCALL(REBASE(0x1F009E0), Live_SystemInfo_Hook, bool, (int controllerIndex, int infoType, char* outputString, const int outputLen))"
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1472,
+                                             "text":  "return MDT_ORIGINAL(Live_SystemInfo_Hook, (controllerIndex, infoType, outputString, outputLen));"
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1476,
+                                             "text":  "snprintf(outputString, outputLen, \"%s (Wine)\", VERSION_STRING);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1478,
+                                             "text":  "strcpy_s(outputString, outputLen, VERSION_STRING);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1550,
+                                             "text":  "MDT_Activate(Live_SystemInfo_Hook);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1802,
+                                             "text":  "ifs.open(WSTORE_MOD_NAME, std::ifstream::in | std::ifstream::binary);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1806,
+                                             "text":  "ALOG(\"ERROR: COULD NOT FIND OR OPEN %s\", WSTORE_MOD_NAME);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "framework.h",
+                                             "line":  4,
+                                             "text":  "#define WSINTERNAL_MOD_NAME \"T7InternalWS.dll\""
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "framework.h",
+                                             "line":  5,
+                                             "text":  "#define WSTORE_MOD_NAME \"WSBlackOps3.exe\""
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "framework.h",
+                                             "line":  9,
+                                             "text":  "#define VERSION_STRING \"BO3Enhanced v1.16\""
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steamugc.cpp",
+                                             "line":  195,
+                                             "text":  "ifT7InternalWS.open(WSINTERNAL_MOD_NAME, std::ios::binary);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steamugc.cpp",
+                                             "line":  199,
+                                             "text":  "ALOG(\"FAILED to open \u0027%s\u0027, cannot check for updates.\", WSINTERNAL_MOD_NAME);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\dllmain.cpp",
+                                             "line":  11,
+                                             "text":  "if (std::filesystem::copy_file(WSTORE_UPDATER_DEST_FILENAME, WSINTERNAL_MOD_NAME, std::filesystem::copy_options::overwrite_existing))"
+                                         },
+                                         {
+                                             "id":  "friend_menu_required_runtime",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\dllmain.cpp",
+                                             "line":  27,
+                                             "text":  "LoadLibraryA(WSINTERNAL_MOD_NAME);"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "friend_menu_loader_contract",
+                        "lesson":  "BO3Enhanced enters through a bootstrapper/import boundary that loads T7InternalWS and handles update handoff.",
+                        "transformed_action":  "Train Reversa to treat T7WSBootstrapper/T7InternalWS/WSBlackOps3 as one lane instead of independent optional files.",
+                        "hit_count":  32,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  16
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  16
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1986,
+                                             "text":  "EXPORT void dummy_proc() {}"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "framework.h",
+                                             "line":  4,
+                                             "text":  "#define WSINTERNAL_MOD_NAME \"T7InternalWS.dll\""
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "MemoryModule.h",
+                                             "line":  141,
+                                             "text":  "* Default implementation of CustomLoadLibraryFunc that calls LoadLibraryA"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "README.md",
+                                             "line":  41,
+                                             "text":  "6. You can use the provided `WindowsCodecs.dll` from the [releases tab](https://github.com/shiversoftdev/BO3Enhanced/releases/tag/Current), or if you wish you can use [CFF Explorer](https://ntcore.com/explorer-suite-iii-cff-explorer-vii/) to add an import to your system32/WindowsCodecs.dll -- Import should be by name from `T7WSBootstrapper.dll`, function name `dummy_proc`."
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steamugc.cpp",
+                                             "line":  195,
+                                             "text":  "ifT7InternalWS.open(WSINTERNAL_MOD_NAME, std::ios::binary);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steamugc.cpp",
+                                             "line":  199,
+                                             "text":  "ALOG(\"FAILED to open \u0027%s\u0027, cannot check for updates.\", WSINTERNAL_MOD_NAME);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\dllmain.cpp",
+                                             "line":  5,
+                                             "text":  "extern \"C\" __declspec(dllexport) void dummy_proc() { }"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\dllmain.cpp",
+                                             "line":  7,
+                                             "text":  "void check_update_moves()"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\dllmain.cpp",
+                                             "line":  11,
+                                             "text":  "if (std::filesystem::copy_file(WSTORE_UPDATER_DEST_FILENAME, WSINTERNAL_MOD_NAME, std::filesystem::copy_options::overwrite_existing))"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\dllmain.cpp",
+                                             "line":  26,
+                                             "text":  "check_update_moves();"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\dllmain.cpp",
+                                             "line":  27,
+                                             "text":  "LoadLibraryA(WSINTERNAL_MOD_NAME);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\T7WSBootstrapper.vcxproj",
+                                             "line":  25,
+                                             "text":  "\u003cRootNamespace\u003eT7WSBootstrapper\u003c/RootNamespace\u003e"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\T7WSBootstrapper.vcxproj",
+                                             "line":  80,
+                                             "text":  "\u003cPreprocessorDefinitions\u003eWIN32;_DEBUG;T7WSBOOTSTRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)\u003c/PreprocessorDefinitions\u003e"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\T7WSBootstrapper.vcxproj",
+                                             "line":  97,
+                                             "text":  "\u003cPreprocessorDefinitions\u003eWIN32;NDEBUG;T7WSBOOTSTRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)\u003c/PreprocessorDefinitions\u003e"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\T7WSBootstrapper.vcxproj",
+                                             "line":  114,
+                                             "text":  "\u003cPreprocessorDefinitions\u003e_DEBUG;T7WSBOOTSTRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)\u003c/PreprocessorDefinitions\u003e"
+                                         },
+                                         {
+                                             "id":  "friend_menu_loader_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\T7WSBootstrapper.vcxproj",
+                                             "line":  131,
+                                             "text":  "\u003cPreprocessorDefinitions\u003eNDEBUG;T7WSBOOTSTRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)\u003c/PreprocessorDefinitions\u003e"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "friend_menu_config_contract",
+                        "lesson":  "The runtime contract includes file-backed config for player name, friends-only, and network password behavior.",
+                        "transformed_action":  "Prefer file-backed runtime state and do not rely on Steam launch environment inheritance for menu-critical switches.",
+                        "hit_count":  68,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  34
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  34
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "bdAuthXB1toSteam.cpp",
+                                             "line":  59,
+                                             "text":  "strncpy((char *)requestData + 0x18, gSteamPlayername, 0x40);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  8,
+                                             "text":  "sec_config security::conf{};"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  155,
+                                             "text":  "if (security::conf.update_watcher_time(PATCH_CONFIG_LOCATION))"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  157,
+                                             "text":  "security::conf.loadfrom(PATCH_CONFIG_LOCATION);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  166,
+                                             "text":  "if (!security::conf.fs_exists(PATCH_CONFIG_LOCATION))"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  168,
+                                             "text":  "security::conf.saveto(PATCH_CONFIG_LOCATION);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  172,
+                                             "text":  "security::conf.loadfrom(PATCH_CONFIG_LOCATION);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  240,
+                                             "text":  "bool sec_config::fs_exists(const char* filename)"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  253,
+                                             "text":  "bool sec_config::update_watcher_time(const char* path)"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  271,
+                                             "text":  "void sec_config::loadfrom(const char* path)"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  300,
+                                             "text":  "case FNV32(\"playername\"):"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  306,
+                                             "text":  "std::strcpy(playername, val.data());"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  307,
+                                             "text":  "SALOG(\"Read playername from config: %s\", playername);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  310,
+                                             "text":  "case FNV32(\"isfriendsonly\"):"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  324,
+                                             "text":  "SALOG(\"Read isfriendsonly from config: %u\", is_friends_only);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_config_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  327,
+                                             "text":  "case FNV32(\"networkpassword\"):"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "friend_menu_stability_contract",
+                        "lesson":  "BO3Enhanced carries crash-hardening and private-session behavior that the menu expects to coexist with.",
+                        "transformed_action":  "Do not run the partner menu as if plain Steam BO3 and BO3Enhanced have the same safety/runtime surface.",
+                        "hit_count":  26,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  13
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  13
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "README.md",
+                                             "line":  22,
+                                             "text":  "- This project includes support for the T7Patch linux config file. After first boot you can edit the config for a network password and will be able to play with other T7Patch players if you wish. The name editor requires a reboot."
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "README.md",
+                                             "line":  23,
+                                             "text":  "- This version of the game is still vulnerable to all the remote crashes from the Steam version, but the easy RCEs are not an issue (accidental by Treyarch). I recommend using network password and friends only."
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  34,
+                                             "text":  "MDT_Define_FASTCALL(REBASE(0x14F6710), dwInstantDispatchMessage_Internal_hook, bool, (XUID senderID, const uint32_t controllerIndex, void* message, uint32_t messageSize))"
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  91,
+                                             "text":  "// friends only is only supported for the steam version of the game at this time"
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  116,
+                                             "text":  "return MDT_ORIGINAL(dwInstantDispatchMessage_Internal_hook, (senderID, controllerIndex, message, messageSize));"
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  119,
+                                             "text":  "MDT_Define_FASTCALL(REBASE(0x2246240), Sys_Checksum_hook, uint16_t, (const unsigned char* msg, uint32_t size))"
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  121,
+                                             "text":  "auto res = MDT_ORIGINAL(Sys_Checksum_hook, (msg, size));"
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  176,
+                                             "text":  "MDT_Define_FASTCALL(REBASE(0x1FF8E70), LobbyMsgRW_PrepWriteMsg_Hook, bool, (msg_t* lobbyMsg, __int64 data, int length, int msgType))"
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  178,
+                                             "text":  "if (MDT_ORIGINAL(LobbyMsgRW_PrepWriteMsg_Hook, (lobbyMsg, data, length, msgType)))"
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  206,
+                                             "text":  "MDT_Activate(dwInstantDispatchMessage_Internal_hook);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  207,
+                                             "text":  "MDT_Activate(Sys_Checksum_hook);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  209,
+                                             "text":  "MDT_Activate(LobbyMsgRW_PrepWriteMsg_Hook);"
+                                         },
+                                         {
+                                             "id":  "friend_menu_stability_contract",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  341,
+                                             "text":  "SALOG(\"Read network password from config!\");"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "runtime_lane",
+                        "lesson":  "Treat BO3Enhanced as the required partner-menu runtime lane when that menu is in use.",
+                        "transformed_action":  "Keep Steam/T7/Reversa and BO3Enhanced manifests separated, but allow Reversa to train on and report the BO3Enhanced lane.",
+                        "hit_count":  50,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  25
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  25
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1276,
+                                             "text":  "ALOG(\"Registering BO3Enhanced lua functions...\");"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1278,
+                                             "text":  "MDT_ORIGINAL(hksI_openlib_hook, (s, \"BO3Enhanced\", lib, 0, 1));"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1476,
+                                             "text":  "snprintf(outputString, outputLen, \"%s (Wine)\", VERSION_STRING);"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1478,
+                                             "text":  "strcpy_s(outputString, outputLen, VERSION_STRING);"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1851,
+                                             "text":  "// copy the tls data from windows store binary into our current thread tls memory region"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1855,
+                                             "text":  "// copy the data from windows store into our dll\u0027s tls region"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1894,
+                                             "text":  "// invoke TLS of windows store bo3"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1961,
+                                             "text":  "return TRUE; // this is not the windows store executable we expect"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "framework.h",
+                                             "line":  5,
+                                             "text":  "#define WSTORE_MOD_NAME \"WSBlackOps3.exe\""
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "framework.h",
+                                             "line":  9,
+                                             "text":  "#define VERSION_STRING \"BO3Enhanced v1.16\""
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "README.md",
+                                             "line":  1,
+                                             "text":  "# BO3Enhanced"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "README.md",
+                                             "line":  3,
+                                             "text":  "[BO3Enhanced](https://github.com/shiversoftdev/BO3Enhanced/releases/tag/Current) is a mod for the Windows Store edition of Black Ops 3 that allows you to crossplay with Steam and use the Steam game files."
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "README.md",
+                                             "line":  9,
+                                             "text":  "Download: https://github.com/shiversoftdev/BO3Enhanced/releases/tag/Current"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "README.md",
+                                             "line":  14,
+                                             "text":  "2. Acquire the [Windows Store BO3 Executable and Dependencies](https://www.youtube.com/watch?v=rBZZTcSJ9_s)"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "README.md",
+                                             "line":  15,
+                                             "text":  "3. Place the Windows Store BO3 Executable and Dependencies into the Steam game installation folder (Steam Library-\u003eRight Click Black Ops III-\u003eProperties-\u003eInstalled Files-\u003eBrowse) (Replace all if it asks)"
+                                         },
+                                         {
+                                             "id":  "runtime_lane",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "README.md",
+                                             "line":  16,
+                                             "text":  "4. Download the [Released Files](https://github.com/shiversoftdev/BO3Enhanced/releases/tag/Current) and place them into the Steam game installation folder (Replace all if it asks)"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "avoid_hot_path_platform_work",
+                        "lesson":  "Cache platform/friends work and avoid refreshing it during gameplay hot paths.",
+                        "transformed_action":  "Keep overlay, Steam, display, and process telemetry idle unless visible or explicitly capturing.",
+                        "hit_count":  76,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  38
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  38
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  19,
+                                             "text":  "// FUTURE MAYBE: friends list"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  11,
+                                             "text":  "uint64_t next_update_friendslist_time = 0;"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  13,
+                                             "text":  "bool IsFriendByXUIDUncached(XUID xuid) // ok I say its \"uncached\" but thats because I don\u0027t want this running a billion times per second and I think it might hitch with huge friends lists."
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  15,
+                                             "text":  "if (GetTickCount64() \u003c next_update_friendslist_time || !s_runningUILevel) // we will just not update the friends list in game because I really think this will hitch. STEAMAPI SUCKS"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  20,
+                                             "text":  "int num_friends = SteamFriends()-\u003eGetFriendCount(k_EFriendFlagImmediate);"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  25,
+                                             "text":  "CSteamID out_friend = SteamFriends()-\u003eGetFriendByIndex(i, k_EFriendFlagImmediate);"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  29,
+                                             "text":  "next_update_friendslist_time = GetTickCount64() + 30 * 1000; // once every 30 seconds"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  85,
+                                             "text":  "gSteamPlayername = SteamFriends()-\u003eGetPersonaName();"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  539,
+                                             "text":  "SteamFriends()-\u003eActivateGameOverlayToUser(\"friendadd\", CSteamID(xuid));"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  542,
+                                             "text":  "SteamFriends()-\u003eActivateGameOverlayToUser(\"steamid\", CSteamID(xuid));"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  694,
+                                             "text":  "validate_and_copy_name(SteamFriends()-\u003eGetFriendPersonaName(steamID), info-\u003ename);"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  700,
+                                             "text":  "if (SteamFriends()-\u003eGetFriendPersonaState(steamID) == k_EPersonaStateOffline)"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  711,
+                                             "text":  "if (!SteamFriends()-\u003eGetFriendGamePlayed(steamID, \u0026currentGame) ||"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  724,
+                                             "text":  "const char* state_str = SteamFriends()-\u003eGetFriendRichPresence(steamID, \"state\");"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  725,
+                                             "text":  "const char *tActivity_str = SteamFriends()-\u003eGetFriendRichPresence(steamID, \"tActivity\");"
+                                         },
+                                         {
+                                             "id":  "avoid_hot_path_platform_work",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  726,
+                                             "text":  "const char* tCtx_str = SteamFriends()-\u003eGetFriendRichPresence(steamID, \"tCtx\");"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "callback_threading",
+                        "lesson":  "Move platform callbacks to a controlled background cadence rather than doing everything in-frame.",
+                        "transformed_action":  "Keep Reversa telemetry publication non-blocking and avoid waiting on locks in Present paths.",
+                        "hit_count":  10,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  5
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  5
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "callback_threading",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  479,
+                                             "text":  "DWORD steam_callbacks_thread(void *arg)"
+                                         },
+                                         {
+                                             "id":  "callback_threading",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  483,
+                                             "text":  "SteamAPI_RunCallbacks();"
+                                         },
+                                         {
+                                             "id":  "callback_threading",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  494,
+                                             "text":  "SteamNetworking()-\u003eReadP2PPacket(incomingPacketBuf, sizeof(incomingPacketBuf), \u0026incomingPacketSize, \u0026incomingPacketFrom);"
+                                         },
+                                         {
+                                             "id":  "callback_threading",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  498,
+                                             "text":  "SteamNetworking()-\u003eReadP2PPacket(incomingPacketBuf, sizeof(incomingPacketBuf), \u0026incomingPacketSize, \u0026incomingPacketFrom);"
+                                         },
+                                         {
+                                             "id":  "callback_threading",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  890,
+                                             "text":  "CreateThread(NULL, NULL, steam_callbacks_thread, NULL, NULL, NULL);"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "frame_dispatcher_budget",
+                        "lesson":  "Frame-event systems need hard budget discipline; every-frame hooks should schedule rare work out of band.",
+                        "transformed_action":  "Use delayed/idle timers for overlay refresh and reserve frame-linked logic for lightweight counters only.",
+                        "hit_count":  22,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  11
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  11
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "frame_dispatcher_budget",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  435,
+                                             "text":  "void dispatch_events()"
+                                         },
+                                         {
+                                             "id":  "frame_dispatcher_budget",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  462,
+                                             "text":  "void register_frame_event(std::function\u003cvoid()\u003e lambda)"
+                                         },
+                                         {
+                                             "id":  "frame_dispatcher_budget",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  467,
+                                             "text":  "void set_delay(uint32_t delayMS, uint32_t eventID, std::function\u003cvoid()\u003e lambda)"
+                                         },
+                                         {
+                                             "id":  "frame_dispatcher_budget",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1520,
+                                             "text":  "dispatch_events();"
+                                         },
+                                         {
+                                             "id":  "frame_dispatcher_budget",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1681,
+                                             "text":  "register_frame_event([]()"
+                                         },
+                                         {
+                                             "id":  "frame_dispatcher_budget",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1692,
+                                             "text":  "set_delay(1000, DELAYED_EVENT_PROCESSORAFFINITY, []()"
+                                         },
+                                         {
+                                             "id":  "frame_dispatcher_budget",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "framework.h",
+                                             "line":  1075,
+                                             "text":  "void register_frame_event(std::function\u003cvoid()\u003e lambda);"
+                                         },
+                                         {
+                                             "id":  "frame_dispatcher_budget",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "framework.h",
+                                             "line":  1076,
+                                             "text":  "void set_delay(uint32_t delayMS, uint32_t eventID, std::function\u003cvoid()\u003e lambda);"
+                                         },
+                                         {
+                                             "id":  "frame_dispatcher_budget",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  115,
+                                             "text":  "void steam_dispatch_every_frame()"
+                                         },
+                                         {
+                                             "id":  "frame_dispatcher_budget",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  892,
+                                             "text":  "register_frame_event([]()"
+                                         },
+                                         {
+                                             "id":  "frame_dispatcher_budget",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  894,
+                                             "text":  "steam_dispatch_every_frame();"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "config_watcher",
+                        "lesson":  "Config changes should be file-backed and watched outside the render path.",
+                        "transformed_action":  "Prefer local config/marker files for Reversa test switches over Steam environment inheritance.",
+                        "hit_count":  32,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  16
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  16
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  151,
+                                             "text":  "DWORD WINAPI watch_settings_updates(_In_ LPVOID lpParameter)"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  155,
+                                             "text":  "if (security::conf.update_watcher_time(PATCH_CONFIG_LOCATION))"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  157,
+                                             "text":  "security::conf.loadfrom(PATCH_CONFIG_LOCATION);"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  168,
+                                             "text":  "security::conf.saveto(PATCH_CONFIG_LOCATION);"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  172,
+                                             "text":  "security::conf.loadfrom(PATCH_CONFIG_LOCATION);"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  220,
+                                             "text":  "CreateThread(NULL, NULL, watch_settings_updates, NULL, NULL, NULL);"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  253,
+                                             "text":  "bool sec_config::update_watcher_time(const char* path)"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  271,
+                                             "text":  "void sec_config::loadfrom(const char* path)"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  278,
+                                             "text":  "update_watcher_time(path);"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  362,
+                                             "text":  "update_watcher_time(path);"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  365,
+                                             "text":  "void sec_config::saveto(const char* path)"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  372,
+                                             "text":  "update_watcher_time(path);"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.cpp",
+                                             "line":  380,
+                                             "text":  "update_watcher_time(path);"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.h",
+                                             "line":  19,
+                                             "text":  "bool update_watcher_time(const char* path);"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.h",
+                                             "line":  20,
+                                             "text":  "void loadfrom(const char* path);"
+                                         },
+                                         {
+                                             "id":  "config_watcher",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "security.h",
+                                             "line":  21,
+                                             "text":  "void saveto(const char* path);"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "wine_detection",
+                        "lesson":  "Detect Wine/Linux explicitly and isolate compatibility hooks from Windows-native paths.",
+                        "transformed_action":  "Keep Vulkan/RM11Pro profile switches separate from Windows-native D3D11/T7 behavior.",
+                        "hit_count":  28,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  14
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  14
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1475,
+                                             "text":  "if (is_on_linux())"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "linux_helper.cpp",
+                                             "line":  1,
+                                             "text":  "// TODO(Emma): remove these as WineGDK becomes more mature."
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "linux_helper.cpp",
+                                             "line":  31,
+                                             "text":  "void do_linux_hooks()"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "linux_helper.cpp",
+                                             "line":  38,
+                                             "text":  "static const char* (*wine_get_version)(void) = NULL;"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "linux_helper.cpp",
+                                             "line":  43,
+                                             "text":  "bool is_on_linux()"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "linux_helper.cpp",
+                                             "line":  47,
+                                             "text":  "return (wine_get_version != NULL);"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "linux_helper.cpp",
+                                             "line":  54,
+                                             "text":  "wine_get_version = (const char *(*)(void))GetProcAddress(ntdll, \"wine_get_version\");"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "linux_helper.cpp",
+                                             "line":  55,
+                                             "text":  "if (wine_get_version == NULL)"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "linux_helper.cpp",
+                                             "line":  61,
+                                             "text":  "const char* version = wine_get_version();"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "linux_helper.h",
+                                             "line":  5,
+                                             "text":  "void do_linux_hooks();"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "linux_helper.h",
+                                             "line":  6,
+                                             "text":  "bool is_on_linux();"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  838,
+                                             "text":  "if (is_on_linux())"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  862,
+                                             "text":  "if (is_on_linux()) {"
+                                         },
+                                         {
+                                             "id":  "wine_detection",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "steam.cpp",
+                                             "line":  864,
+                                             "text":  "do_linux_hooks();"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "loader_manifest",
+                        "lesson":  "Use a small loader/manifest boundary for update and DLL handoff behavior.",
+                        "transformed_action":  "Keep reversa-wrapper-stack.json and deploy hash checks as the source of truth for test state.",
+                        "hit_count":  20,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  10
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  10
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "loader_manifest",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "MemoryModule.h",
+                                             "line":  141,
+                                             "text":  "* Default implementation of CustomLoadLibraryFunc that calls LoadLibraryA"
+                                         },
+                                         {
+                                             "id":  "loader_manifest",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "README.md",
+                                             "line":  41,
+                                             "text":  "6. You can use the provided `WindowsCodecs.dll` from the [releases tab](https://github.com/shiversoftdev/BO3Enhanced/releases/tag/Current), or if you wish you can use [CFF Explorer](https://ntcore.com/explorer-suite-iii-cff-explorer-vii/) to add an import to your system32/WindowsCodecs.dll -- Import should be by name from `T7WSBootstrapper.dll`, function name `dummy_proc`."
+                                         },
+                                         {
+                                             "id":  "loader_manifest",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\dllmain.cpp",
+                                             "line":  7,
+                                             "text":  "void check_update_moves()"
+                                         },
+                                         {
+                                             "id":  "loader_manifest",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\dllmain.cpp",
+                                             "line":  26,
+                                             "text":  "check_update_moves();"
+                                         },
+                                         {
+                                             "id":  "loader_manifest",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\dllmain.cpp",
+                                             "line":  27,
+                                             "text":  "LoadLibraryA(WSINTERNAL_MOD_NAME);"
+                                         },
+                                         {
+                                             "id":  "loader_manifest",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\T7WSBootstrapper.vcxproj",
+                                             "line":  25,
+                                             "text":  "\u003cRootNamespace\u003eT7WSBootstrapper\u003c/RootNamespace\u003e"
+                                         },
+                                         {
+                                             "id":  "loader_manifest",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\T7WSBootstrapper.vcxproj",
+                                             "line":  80,
+                                             "text":  "\u003cPreprocessorDefinitions\u003eWIN32;_DEBUG;T7WSBOOTSTRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)\u003c/PreprocessorDefinitions\u003e"
+                                         },
+                                         {
+                                             "id":  "loader_manifest",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\T7WSBootstrapper.vcxproj",
+                                             "line":  97,
+                                             "text":  "\u003cPreprocessorDefinitions\u003eWIN32;NDEBUG;T7WSBOOTSTRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)\u003c/PreprocessorDefinitions\u003e"
+                                         },
+                                         {
+                                             "id":  "loader_manifest",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\T7WSBootstrapper.vcxproj",
+                                             "line":  114,
+                                             "text":  "\u003cPreprocessorDefinitions\u003e_DEBUG;T7WSBOOTSTRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)\u003c/PreprocessorDefinitions\u003e"
+                                         },
+                                         {
+                                             "id":  "loader_manifest",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "T7WSBootstrapper\\T7WSBootstrapper.vcxproj",
+                                             "line":  131,
+                                             "text":  "\u003cPreprocessorDefinitions\u003eNDEBUG;T7WSBOOTSTRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)\u003c/PreprocessorDefinitions\u003e"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "affinity_experiment",
+                        "lesson":  "CPU affinity can change pacing, but it is hardware-sensitive and needs A/B captures before promotion.",
+                        "transformed_action":  "Add affinity as an opt-in experiment only after overlay-idle and BO3Enhanced executable baselines.",
+                        "hit_count":  10,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  5
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  5
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "affinity_experiment",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1692,
+                                             "text":  "set_delay(1000, DELAYED_EVENT_PROCESSORAFFINITY, []()"
+                                         },
+                                         {
+                                             "id":  "affinity_experiment",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1699,
+                                             "text":  "if (!GetProcessAffinityMask(GetCurrentProcess(), \u0026processAffinity, \u0026systemAffinity))"
+                                         },
+                                         {
+                                             "id":  "affinity_experiment",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1718,
+                                             "text":  "if (!SetProcessAffinityMask(GetCurrentProcess(), affinity))"
+                                         },
+                                         {
+                                             "id":  "affinity_experiment",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1730,
+                                             "text":  "if (!SetProcessAffinityMask(GetCurrentProcess(), processAffinity))"
+                                         },
+                                         {
+                                             "id":  "affinity_experiment",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "framework.h",
+                                             "line":  1121,
+                                             "text":  "#define DELAYED_EVENT_PROCESSORAFFINITY 1"
+                                         }
+                                     ]
+                    },
+                    {
+                        "id":  "compatibility_boundary",
+                        "lesson":  "Separate menu-required stability/runtime features from unrelated debugger, DRM, or stealth internals.",
+                        "transformed_action":  "Train on the BO3Enhanced contract and port only compatibility-facing behavior that is needed, understood, and testable.",
+                        "hit_count":  122,
+                        "passes_with_hits":  2,
+                        "total_passes":  2,
+                        "confidence":  "confirmed_by_all_passes",
+                        "pass_hit_counts":  [
+                                                {
+                                                    "pass_id":  "pass1",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  61
+                                                },
+                                                {
+                                                    "pass_id":  "pass2",
+                                                    "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                                    "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                                    "hit_count":  61
+                                                }
+                                            ],
+                        "evidence":  [
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "bdAuthXB1toSteam.cpp",
+                                             "line":  120,
+                                             "text":  "MDT_Define_FASTCALL(REBASE(0x29a81e0), bdAntiCheat_reportExtendedAuthInfo_Hook, void*, (void* a, void* b, int gameMode, int gameVersion, uint64_t checksum, uint8_t* macaddr, uint64_t internaladdr, uint64_t externaladdr, void* authinfo))"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "bdAuthXB1toSteam.cpp",
+                                             "line":  122,
+                                             "text":  "return MDT_ORIGINAL(bdAntiCheat_reportExtendedAuthInfo_Hook, (a, b, gameMode, BD_VERSION_LARP, checksum, macaddr, internaladdr, externaladdr, authinfo));"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "bdAuthXB1toSteam.cpp",
+                                             "line":  125,
+                                             "text":  "MDT_Define_FASTCALL(REBASE(0x29a7db0), bdAntiCheat_reportConsoleDetails_Hook, void*, (void* a, void* b, int gameMode, int gameVersion, uint64_t checksum, uint8_t* macaddr, uint64_t internaladdr, uint64_t externaladdr, void* consoleid))"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "bdAuthXB1toSteam.cpp",
+                                             "line":  127,
+                                             "text":  "return MDT_ORIGINAL(bdAntiCheat_reportConsoleDetails_Hook, (a, b, gameMode, BD_VERSION_LARP, checksum, macaddr, internaladdr, externaladdr, consoleid));"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "bdAuthXB1toSteam.cpp",
+                                             "line":  160,
+                                             "text":  "// fix the version number in bdAntiCheat"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "bdAuthXB1toSteam.cpp",
+                                             "line":  161,
+                                             "text":  "MDT_Activate(bdAntiCheat_reportConsoleDetails_Hook);"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "bdAuthXB1toSteam.cpp",
+                                             "line":  162,
+                                             "text":  "MDT_Activate(bdAntiCheat_reportExtendedAuthInfo_Hook);"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1055,
+                                             "text":  "MDT_Define_FASTCALL(REBASE(0x23C0110), anticheat_sus_peepo_hook, void, ())"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1057,
+                                             "text":  "SPOOFED_CALL(((void(__fastcall*)())MDT_ORIGINAL_PTR(anticheat_sus_peepo_hook)));"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1060,
+                                             "text":  "MDT_Define_FASTCALL(REBASE(0x22649C0), anticheat_sus_peepo2_hook, void, ()) // probably anticheat pump"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1062,
+                                             "text":  "SPOOFED_CALL(((void(__fastcall*)())MDT_ORIGINAL_PTR(anticheat_sus_peepo2_hook)));"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1065,
+                                             "text":  "MDT_Define_FASTCALL(REBASE(0x22C0140), anticheat_unk3_hook, uint64_t, (uint64_t a1, uint64_t a2))"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1068,
+                                             "text":  "auto res = SPOOFED_CALL(((uint64_t(__fastcall*)(uint64_t, uint64_t))MDT_ORIGINAL_PTR(anticheat_unk3_hook)), a1, a2);"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1073,
+                                             "text":  "MDT_Define_FASTCALL(REBASE(0x22BE810), anticheat_unk4_hook, uint64_t, (uint64_t a1))"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass2",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\upstream-bo3\\shiversoftdev-bo3enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1076,
+                                             "text":  "auto res = SPOOFED_CALL(((uint64_t(__fastcall*)(uint64_t))MDT_ORIGINAL_PTR(anticheat_unk4_hook)), a1);"
+                                         },
+                                         {
+                                             "id":  "compatibility_boundary",
+                                             "pass_id":  "pass1",
+                                             "root":  "\\\\wsl.localhost\\Ubuntu\\home\\richtofen\\.android\\repositories\\gaming\\BO3Enhanced",
+                                             "commit":  "3d54e5c5545fa5eb7091c4ea6b531faf75c10764",
+                                             "file":  "dllmain.cpp",
+                                             "line":  1081,
+                                             "text":  "MDT_Define_FASTCALL(REBASE(0x22BD4C0), anticheat_unk5_hook, uint64_t, (uint64_t a1))"
+                                         }
+                                     ]
+                    }
+                ],
+    "menu_contract":  [
+                          {
+                              "id":  "consoleix_process_contract",
+                              "lesson":  "ConsoleIX currently attaches to Steam BlackOps3.exe and T7InternalWS directly.",
+                              "transformed_action":  "Teach the menu bridge to resolve Steam BO3 and BO3Enhanced lanes independently before trusting offsets.",
+                              "hit_count":  4,
+                              "evidence":  [
+                                               {
+                                                   "id":  "consoleix_process_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  1036,
+                                                   "text":  "procId = GetProcId(L\"BlackOps3.exe\");"
+                                               },
+                                               {
+                                                   "id":  "consoleix_process_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  1043,
+                                                   "text":  "moduleBase = GetModuleBaseAddress(procId, L\"BlackOps3.exe\");"
+                                               },
+                                               {
+                                                   "id":  "consoleix_process_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  1044,
+                                                   "text":  "DllBase = GetModuleBaseAddress(procId, L\"T7InternalWS.dll\");"
+                                               },
+                                               {
+                                                   "id":  "consoleix_process_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  1045,
+                                                   "text":  "CaptionAddr = DllBase + 0x50000;"
+                                               }
+                                           ]
+                          },
+                          {
+                              "id":  "consoleix_bank_guard_contract",
+                              "lesson":  "Bank writes must remain behind map, weapon, and resolved-address guards.",
+                              "transformed_action":  "Keep bank/table pattern scanning ahead of signature fallback, and invalidate BankAddr on map or weapon changes.",
+                              "hit_count":  53,
+                              "evidence":  [
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  188,
+                                                   "text":  "static uintptr_t BankAddr = 0; // move these to file/class scope if not already"
+                                               },
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  223,
+                                                   "text":  "uintptr_t moduleBase = 0, DllBase = 0, HookLastByteAddr = 0, HookClanByte = 0, SigCamoAddr = 0, ModIdAddr = 0, TestAddr = 0, LeftPistolAddr = 0, AmmoBaseAddr = 0, NameAddr = 0, NameBaseAddr = 0, MapIdAddr = 0, ConnectionIDAddr = 0, WeaponInHandAddr = 0, TableBase = 0, SvCheatsAddr = 0, DeveloperAddr = 0, TWeaponAddr = 0, LocalPlayerOffset = 0, ZombiesCountAddr = 0, CamoAddr1 = 0, CamoAddr2 = 0, CamoAddr3 = 0, CamoAddr4 = 0, CamoAddr5 = 0, XCoordAddr = 0, YCoordAddr = 0, ZCoordAddr = 0, NoclipAddr = 0, GoldTU8EHealthAddr = 0, GoldTU8EBaseAddr = 0, GoldTU8ENameAddr = 0, GodBaseAddr = 0, GodAddr = 0, MWeaponAddr = 0, QWeaponAddr = 0, WWeaponAddr = 0, EWeaponAddr = 0, ScoreAddr = 0, ScoreBaseAddr = 0, ClassCamoBaseAddr = 0, ClassCamoAddr = 0;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  231,
+                                                   "text":  "MapIdAddr = ConnectionIDAddr = WeaponInHandAddr = TableBase = 0;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  239,
+                                                   "text":  "ClipIdAddr = SpiritTimerAddr = BankAddr = 0;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  475,
+                                                   "text":  "DWORD WINAPI ScanThread(LPVOID lpParam)"
+                                               },
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  481,
+                                                   "text":  "uintptr_t found = FindPatternEx("
+                                               },
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  487,
+                                                   "text":  "printf(\"[SCAN] FindPatternEx result: 0x%llX\\n\", found);"
+                                               },
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  491,
+                                                   "text":  "BankAddr = found - 0x28;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  493,
+                                                   "text":  "printf(\"[SCAN] BankAddr set: 0x%llX\\n\", BankAddr);"
+                                               },
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  504,
+                                                   "text":  "DWORD WINAPI SpiritScanThread(LPVOID lpParam)"
+                                               },
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  510,
+                                                   "text":  "uintptr_t found = FindPatternEx("
+                                               },
+                                               {
+                                                   "id":  "consoleix_bank_guard_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  516,
+                                                   "text":  "printf(\"[SPIRIT SCAN] FindPatternEx result: 0x%llX\\n\", found);"
+                                               }
+                                           ]
+                          },
+                          {
+                              "id":  "consoleix_independent_visual_contract",
+                              "lesson":  "Clan/caption/camo visual features have their own target validation and should not be blocked by bank weapon/map guards.",
+                              "transformed_action":  "Bridge hookClanByte and camoByte through independent address validation, not the bank-specific guard chain.",
+                              "hit_count":  124,
+                              "evidence":  [
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  54,
+                                                   "text":  "//BO3Enhanced Rainbow"
+                                               },
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  175,
+                                                   "text":  "bool bHealth = true, bAmmo = false, bRewardGiven = false, bCamoFlag = false, bName = false, bCamo = false, bNameToggle = false, bSvCheats = false, bDebug = false, bInstant = false, bNoclip = false, bToggleMW = false, bToggleQW = false, bToggleWW = false, bToggleEW = false, bToggleScore = false, bToggleAbilityDamage = false, bToggleSpeed = false, bToggleJump = false, bRainbow = false, bRainbow2 = false, bRainbow3 = false, bRainbowBypass = false, bRainbowCycle = false, bTest = false, bTest2 = false, bTest3 = false, bReviveGoldTU8E = false, bGoldTU8EHealth = false, bUnlimitedGrenades = false, bGoldTU8EFlag = true, bRapid = false;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  176,
+                                                   "text":  "bool bClan = false, isPatched = false, bBank = false, bSpirit = false;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  178,
+                                                   "text":  "std::thread rainbowThread;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  180,
+                                                   "text":  "std::thread rainbowThread2;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  182,
+                                                   "text":  "std::thread rainbowThread3;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  223,
+                                                   "text":  "uintptr_t moduleBase = 0, DllBase = 0, HookLastByteAddr = 0, HookClanByte = 0, SigCamoAddr = 0, ModIdAddr = 0, TestAddr = 0, LeftPistolAddr = 0, AmmoBaseAddr = 0, NameAddr = 0, NameBaseAddr = 0, MapIdAddr = 0, ConnectionIDAddr = 0, WeaponInHandAddr = 0, TableBase = 0, SvCheatsAddr = 0, DeveloperAddr = 0, TWeaponAddr = 0, LocalPlayerOffset = 0, ZombiesCountAddr = 0, CamoAddr1 = 0, CamoAddr2 = 0, CamoAddr3 = 0, CamoAddr4 = 0, CamoAddr5 = 0, XCoordAddr = 0, YCoordAddr = 0, ZCoordAddr = 0, NoclipAddr = 0, GoldTU8EHealthAddr = 0, GoldTU8EBaseAddr = 0, GoldTU8ENameAddr = 0, GodBaseAddr = 0, GodAddr = 0, MWeaponAddr = 0, QWeaponAddr = 0, WWeaponAddr = 0, EWeaponAddr = 0, ScoreAddr = 0, ScoreBaseAddr = 0, ClassCamoBaseAddr = 0, ClassCamoAddr = 0;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  224,
+                                                   "text":  "uintptr_t TestAddr2 = 0, TableCamoAddr = 0, EntityList = 0, DistanceBetween = 0, HealthAddr = 0, ClipIdAddr = 0, SpiritTimerAddr = 0;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  225,
+                                                   "text":  "uintptr_t CaptionAddr = 0;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  229,
+                                                   "text":  "moduleBase = HookLastByteAddr = HookClanByte = SigCamoAddr = ModIdAddr = 0;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  233,
+                                                   "text":  "ZombiesCountAddr = CamoAddr1 = CamoAddr2 = CamoAddr3 = CamoAddr4 = CamoAddr5 = 0;"
+                                               },
+                                               {
+                                                   "id":  "consoleix_independent_visual_contract",
+                                                   "file":  "ConsoleIX.cpp",
+                                                   "line":  237,
+                                                   "text":  "ScoreAddr = ScoreBaseAddr = ClassCamoBaseAddr = ClassCamoAddr = 0;"
+                                               }
+                                           ]
+                          }
+                      ],
+    "safety_boundary":  "Train on BO3Enhanced runtime/menu/stability contracts. Port only behavior that is required, understood, testable, and compatible with BO3-Transformed."
+}

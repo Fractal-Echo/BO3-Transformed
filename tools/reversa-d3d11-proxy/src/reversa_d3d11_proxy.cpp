@@ -24,6 +24,7 @@ bool g_t7CompatibilityMode = false;
 bool g_d3d11FactoryHooksEnabled = true;
 bool g_factoryHookSkipLogged = false;
 bool g_directSwapChainWrapSkipLogged = false;
+reversa::BO3RuntimeLane g_runtimeLane = reversa::BO3RuntimeLane::Unknown;
 
 using CreateSwapChainProc = HRESULT(STDMETHODCALLTYPE*)(IDXGIFactory*, IUnknown*, DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**);
 using CreateSwapChainForHwndProc = HRESULT(STDMETHODCALLTYPE*)(
@@ -631,12 +632,14 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID)
         QueryPerformanceFrequency(&g_qpcFrequency);
         g_sharedTelemetry = reversa::MapSharedTelemetry(&g_sharedTelemetryMapping);
         const std::wstring moduleDirectory = GetModuleDirectory();
+        g_runtimeLane = reversa::DetectBO3RuntimeLane(moduleDirectory.c_str());
         g_t7CompatibilityMode = reversa::ShouldUseT7CompatibilityMode(moduleDirectory.c_str());
         g_d3d11FactoryHooksEnabled = reversa::ShouldEnableD3D11FactoryHooks(moduleDirectory.c_str());
 
         wchar_t line[256]{};
         swprintf_s(line,
-            L"D3D11 proxy loaded; T7 compatibility %s; D3D11 factory hooks %s",
+            L"D3D11 proxy loaded; runtime %s; T7 compatibility %s; D3D11 factory hooks %s",
+            reversa::BO3RuntimeLaneName(g_runtimeLane),
             g_t7CompatibilityMode ? L"on" : L"off",
             g_d3d11FactoryHooksEnabled ? L"enabled" : L"disabled");
         LogLine(line);

@@ -19,6 +19,7 @@ Current local reference commits:
 | `shiversoftdev/Black-Ops-3-Projects` | `23536c20d648` | Historical source/reference tree. |
 | `Scroptss/T7Patch` | `935b03c3068d` | Maintained release/readme reference. |
 | `Scroptss/T7Patch-src` | `32bf46ef26e9` | Cleanest source reference for hook/protection layout. |
+| `shiversoftdev/BO3Enhanced` | `3d54e5c5545f` | Separate Windows Store executable lane; not compatible with regular T7Patch. |
 
 Do not vendor T7 source or binaries into this repo unless the license and
 provenance are reviewed first. Keep copied logic small, attributed, and
@@ -37,6 +38,12 @@ The practical merge is a runtime contract first, not a blind source merge. T7 is
 already in the game folder as `T7InternalWS.dll` / `T7WSBootstrapper.dll`.
 Reversa now detects those files and defaults into T7 compatibility mode.
 
+BO3Enhanced stays a separate renderer/performance test profile and is also the
+required runtime lane for the partner menu. Its performance claim comes from
+using the Windows Store BO3 executable path with Steam files, not from a small
+patch we can apply blindly to the Steam executable. Reversa trains on the
+BO3Enhanced runtime/menu contract and reports that lane explicitly.
+
 ## Runtime Behavior
 
 When T7 companion DLLs are present:
@@ -44,7 +51,8 @@ When T7 companion DLLs are present:
 - `dxgi.dll` remains active for Reversa overlay and DXGI-side telemetry.
 - `d3d11.dll` still forwards BO3 D3D11 calls to `d3d11_system.dll`.
 - Reversa skips D3D11 factory vtable hooks by default.
-- The HUD reports `T7 present`.
+- The HUD reports `T7 present` plus the detected runtime lane: `Steam/T7`,
+  `BO3Enhanced`, or `Unknown`.
 - `reversa-wrapper-stack.json` records hashes for active Reversa and T7 files.
 
 Overrides for one-off testing:
@@ -54,6 +62,8 @@ $env:REVERSA_T7_COMPAT = "0"
 $env:REVERSA_T7_COMPAT = "1"
 $env:REVERSA_D3D11_FACTORY_HOOKS = "0"
 $env:REVERSA_D3D11_FACTORY_HOOKS = "1"
+$env:REVERSA_BO3ENHANCED_COMPAT = "0"
+$env:REVERSA_BO3ENHANCED_COMPAT = "1"
 ```
 
 Leave overrides unset for partner testing.

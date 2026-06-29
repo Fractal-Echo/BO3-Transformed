@@ -68,6 +68,25 @@ benchmark scripts pointed at the game window instead of the overlay surface.
 - Deploy writes `reversa-wrapper-stack.json` into the game directory with
   hashes for active Reversa, system-forwarder, and T7 companion DLLs.
 
+## What v0.7 Adds
+
+- Overlay content starts hidden by default.
+- `F9`, `F10`, and `F11` use registered Windows hotkeys instead of 100 ms
+  polling.
+- The overlay timer stops completely while both the HUD and partner menu are
+  hidden.
+- The partner menu still polls arrows and `Space`, but only while the menu is
+  open.
+
+## What v0.8 Adds
+
+- BO3 runtime lane detection shared by the DXGI and D3D11 proxies.
+- Wrapper logs and HUD now report `Steam/T7`, `BO3Enhanced`, or `Unknown`.
+- BO3Enhanced forces the same conservative D3D11 compatibility posture as T7
+  unless explicitly overridden for a one-off test.
+- Reversa training output for the partner menu is generated from BO3Enhanced
+  and ConsoleIX evidence under `profiles\bo3-vulkan\training`.
+
 Hotkeys:
 
 - `F9`: toggle the Reversa partner menu.
@@ -122,6 +141,8 @@ $env:REVERSA_T7_COMPAT = "0"              # force compatibility mode off
 $env:REVERSA_T7_COMPAT = "1"              # force compatibility mode on
 $env:REVERSA_D3D11_FACTORY_HOOKS = "1"    # force Reversa D3D11 hooks on
 $env:REVERSA_D3D11_FACTORY_HOOKS = "0"    # force Reversa D3D11 hooks off
+$env:REVERSA_BO3ENHANCED_COMPAT = "1"     # force BO3Enhanced runtime lane
+$env:REVERSA_BO3ENHANCED_COMPAT = "0"     # force Steam/T7 runtime lane
 ```
 
 Default test posture: leave those variables unset.
@@ -146,6 +167,16 @@ skip creating the overlay window:
 ```powershell
 $env:REVERSA_OVERLAY_DISABLE = "1"
 ```
+
+When launching through an already-running Steam client, prefer the file kill
+switch because Steam may not inherit a new shell environment:
+
+```powershell
+New-Item -ItemType File -Force -Path "D:\SteamLibrary\steamapps\common\Call of Duty Black Ops III\reversa-overlay.disable"
+```
+
+Delete `reversa-overlay.disable` to restore the overlay window on the next game
+launch.
 
 ## Next Steps
 

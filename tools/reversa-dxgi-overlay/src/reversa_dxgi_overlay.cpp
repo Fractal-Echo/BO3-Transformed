@@ -17,11 +17,15 @@ namespace {
 
 constexpr wchar_t kWindowClassName[] = L"ReversaOverlayWindow";
 constexpr UINT_PTR kRefreshTimer = 1;
-constexpr UINT kHotkeyPollTimerMs = 100;
+constexpr UINT kOverlayIdleTimerMs = 1000;
+constexpr UINT kOverlayMenuTimerMs = 100;
 constexpr ULONGLONG kOverlayStatsRefreshMs = 1000;
-constexpr ULONGLONG kOverlayPaintRefreshMs = 500;
+constexpr ULONGLONG kOverlayPaintRefreshMs = 1000;
 constexpr DWORD kGameWindowWaitMs = 60000;
 constexpr uint32_t kTelemetrySourceDxgi = 0x1;
+constexpr int kHotkeyMenu = 1;
+constexpr int kHotkeyHud = 2;
+constexpr int kHotkeyClickThrough = 3;
 
 struct CpuSample {
     ULONGLONG processTime100ns = 0;
@@ -38,7 +42,7 @@ struct OverlayStats {
     DWORD displayHz = 0;
     RECT gameRect{};
     bool gameWindowFound = false;
-    bool visible = true;
+    bool visible = false;
     bool presentHooked = false;
     ULONGLONG presentCount = 0;
     double presentLastMs = 0.0;
@@ -57,7 +61,7 @@ struct PresentTelemetry {
 };
 
 struct PartnerMenuState {
-    bool visible = true;
+    bool visible = false;
     int tab = 0;
     int selected = 0;
     bool health = false;
@@ -99,6 +103,7 @@ ULONGLONG g_lastOverlayPaintTick = 0;
 bool g_clickThrough = true;
 bool g_presentLockReady = false;
 bool g_t7CompanionPresent = false;
+reversa::BO3RuntimeLane g_runtimeLane = reversa::BO3RuntimeLane::Unknown;
 
 constexpr const wchar_t* kPartnerMenuTabs[] = {
     L"Perf",
@@ -343,13 +348,14 @@ bool ToggleSelectedPartnerItem()
     }
 }
 
+bool HasOverlayContent()
+{
+    return g_stats.visible || g_partnerMenu.visible;
+}
+
 bool HandlePartnerMenuHotkeys()
 {
     bool changed = false;
-    if (GetAsyncKeyState(VK_F9) & 1) {
-        g_partnerMenu.visible = !g_partnerMenu.visible;
-        changed = true;
-    }
     if (!g_partnerMenu.visible) {
         return changed;
     }
@@ -462,7 +468,8 @@ void DrawPartnerMenu(HDC hdc, const RECT& client)
         swprintf_s(line, L"Present telemetry: %s | Count: %llu", g_stats.presentHooked ? L"hooked" : L"waiting", g_stats.presentCount);
         DrawTextAt(hdc, bodyX, y, RGB(225, 240, 255), line);
         y += 22;
-        swprintf_s(line, L"T7 companion: %s | D3D11 vtable hook: %s",
+        swprintf_s(line, L"Runtime: %s | T7 companion: %s | D3D11 hook: %s",
+            reversa::BO3RuntimeLaneName(g_runtimeLane),
             g_t7CompanionPresent ? L"present" : L"absent",
             g_t7CompanionPresent ? L"disabled by compat" : L"auto");
         DrawTextAt(hdc, bodyX, y, g_t7CompanionPresent ? RGB(120, 230, 170) : RGB(180, 190, 205), line);
@@ -1331,6 +1338,55 @@ void ToggleClickThrough()
     SetWindowLongPtrW(g_overlay, GWL_EXSTYLE, exStyle);
 }
 
+void UpdateOverlayTimer()
+{
+    if (!g_overlay) {
+        return;
+    }
+
+    KillTimer(g_overlay, kRefreshTimer);
+    if (HasOverlayContent()) {
+        SetTimer(g_overlay, kRefreshTimer, g_partnerMenu.visible ? kOverlayMenuTimerMs : kOverlayIdleTimerMs, nullptr);
+    }
+}
+
+void RefreshOverlayVisibility(bool forceStats)
+{
+    if (!g_overlay) {
+        return;
+    }
+
+    if (!HasOverlayContent()) {
+        ShowWindow(g_overlay, SW_HIDE);
+        UpdateOverlayTimer();
+        return;
+    }
+
+    UpdateWindowPosition();
+    if (forceStats) {
+        UpdateProcessStats();
+        g_lastOverlayStatsTick = GetTickCount64();
+    }
+    ShowWindow(g_overlay, SW_SHOWNOACTIVATE);
+    InvalidateRect(g_overlay, nullptr, FALSE);
+    UpdateOverlayTimer();
+}
+
+void TogglePartnerMenu()
+{
+    g_partnerMenu.visible = !g_partnerMenu.visible;
+    if (g_partnerMenu.visible) {
+        ClampPartnerSelection();
+    }
+    RefreshOverlayVisibility(true);
+}
+
+void ToggleHud()
+{
+    g_stats.visible = !g_stats.visible;
+    RefreshOverlayVisibility(true);
+}
+
 void PaintOverlay(HWND hwnd)
 {
     PAINTSTRUCT ps{};
@@ -1359,10 +1415,11 @@ void PaintOverlay(HWND hwnd)
         ULONGLONG uptimeSec = (GetTickCount64() - g_startTick) / 1000;
         wchar_t text[2048]{};
         swprintf_s(text,
-            L"REVERSA HUD v0.6 | T7 %s | PID %lu | Up %llus | F9 menu | F10 hud | F11 pass\r\n"
+            L"REVERSA HUD v0.8 | Runtime %s | T7 %s | PID %lu | Up %llus | F9 menu | F10 hud | F11 pass\r\n"
             L"Present %s | #%llu | EMA %.2f ms / %.1f FPS | Last %.2f ms | HR 0x%08lX\r\n"
             L"CPU %.1f%% | Threads %lu | Handles %lu | WS %zu MB | Private %zu MB\r\n"
             L"Display %s @ %lu Hz | Game %ld,%ld %ldx%ld",
+            reversa::BO3RuntimeLaneName(g_runtimeLane),
             g_t7CompanionPresent ? L"present" : L"absent",
             g_stats.processId,
             uptimeSec,
@@ -1407,18 +1464,34 @@ void PaintOverlay(HWND hwnd)
 LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
+    case WM_HOTKEY:
+        if (wParam == kHotkeyMenu) {
+            TogglePartnerMenu();
+            return 0;
+        }
+        if (wParam == kHotkeyHud) {
+            ToggleHud();
+            return 0;
+        }
+        if (wParam == kHotkeyClickThrough) {
+            ToggleClickThrough();
+            if (HasOverlayContent()) {
+                InvalidateRect(hwnd, nullptr, FALSE);
+            }
+            return 0;
+        }
+        break;
     case WM_TIMER:
         if (wParam == kRefreshTimer) {
             bool shouldPaint = false;
-            if (GetAsyncKeyState(VK_F10) & 1) {
-                g_stats.visible = !g_stats.visible;
-                shouldPaint = true;
+            if (!HasOverlayContent()) {
+                UpdateOverlayTimer();
+                return 0;
             }
-            if (GetAsyncKeyState(VK_F11) & 1) {
-                ToggleClickThrough();
-                shouldPaint = true;
+
+            if (g_partnerMenu.visible) {
+                shouldPaint = HandlePartnerMenuHotkeys() || shouldPaint;
             }
-            shouldPaint = HandlePartnerMenuHotkeys() || shouldPaint;
 
             const ULONGLONG nowMs = GetTickCount64();
             if (g_lastOverlayStatsTick == 0 || nowMs - g_lastOverlayStatsTick >= kOverlayStatsRefreshMs) {
@@ -1429,7 +1502,7 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             }
             else if (g_lastOverlayPaintTick == 0 || nowMs - g_lastOverlayPaintTick >= kOverlayPaintRefreshMs) {
                 UpdatePresentStatsSnapshot();
-                shouldPaint = g_stats.visible || g_partnerMenu.visible;
+                shouldPaint = HasOverlayContent();
             }
 
             if (shouldPaint) {
@@ -1446,6 +1519,9 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         return 0;
     case WM_DESTROY:
         KillTimer(hwnd, kRefreshTimer);
+        UnregisterHotKey(hwnd, kHotkeyMenu);
+        UnregisterHotKey(hwnd, kHotkeyHud);
+        UnregisterHotKey(hwnd, kHotkeyClickThrough);
         PostQuitMessage(0);
         return 0;
     default:
@@ -1457,9 +1533,15 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 DWORD WINAPI OverlayThread(LPVOID)
 {
-    wchar_t disabled[8]{};
-    DWORD disabledChars = GetEnvironmentVariableW(L"REVERSA_OVERLAY_DISABLE", disabled, static_cast<DWORD>(std::size(disabled)));
-    if (disabledChars > 0 && disabled[0] != L'0') {
+    bool disabled = false;
+    if (reversa::ReadEnvironmentBool(L"REVERSA_OVERLAY_DISABLE", disabled) && disabled) {
+        LogLine(L"overlay window disabled by REVERSA_OVERLAY_DISABLE");
+        return 0;
+    }
+
+    const std::wstring moduleDirectory = GetModuleDirectory();
+    if (reversa::FileExistsInDirectory(moduleDirectory.c_str(), L"reversa-overlay.disable")) {
+        LogLine(L"overlay window disabled by reversa-overlay.disable");
         return 0;
     }
 
@@ -1499,14 +1581,15 @@ DWORD WINAPI OverlayThread(LPVOID)
     }
 
     SetLayeredWindowAttributes(g_overlay, RGB(0, 0, 0), 0, LWA_COLORKEY);
-    ShowWindow(g_overlay, SW_SHOWNOACTIVATE);
-    SetTimer(g_overlay, kRefreshTimer, kHotkeyPollTimerMs, nullptr);
+    ShowWindow(g_overlay, SW_HIDE);
 
-    UpdateWindowPosition();
-    UpdateProcessStats();
+    RegisterHotKey(g_overlay, kHotkeyMenu, MOD_NOREPEAT, VK_F9);
+    RegisterHotKey(g_overlay, kHotkeyHud, MOD_NOREPEAT, VK_F10);
+    RegisterHotKey(g_overlay, kHotkeyClickThrough, MOD_NOREPEAT, VK_F11);
+
     g_lastOverlayStatsTick = GetTickCount64();
     g_lastOverlayPaintTick = g_lastOverlayStatsTick;
-    InvalidateRect(g_overlay, nullptr, FALSE);
+    RefreshOverlayVisibility(true);
 
     MSG msg{};
     while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
@@ -1574,8 +1657,16 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID)
         QueryPerformanceFrequency(&g_qpcFrequency);
         g_sharedTelemetry = reversa::MapSharedTelemetry(&g_sharedTelemetryMapping);
         DisableThreadLibraryCalls(instance);
-        g_t7CompanionPresent = reversa::IsT7CompanionPresent(GetModuleDirectory().c_str());
-        LogLine(g_t7CompanionPresent ? L"DXGI proxy loaded; T7 companion detected" : L"DXGI proxy loaded; T7 companion not detected");
+        const std::wstring moduleDirectory = GetModuleDirectory();
+        g_t7CompanionPresent = reversa::IsT7CompanionPresent(moduleDirectory.c_str());
+        g_runtimeLane = reversa::DetectBO3RuntimeLane(moduleDirectory.c_str());
+
+        wchar_t line[256]{};
+        swprintf_s(line,
+            L"DXGI proxy loaded; runtime %s; T7 companion %s",
+            reversa::BO3RuntimeLaneName(g_runtimeLane),
+            g_t7CompanionPresent ? L"detected" : L"not detected");
+        LogLine(line);
         HANDLE thread = CreateThread(nullptr, 0, OverlayThread, nullptr, 0, nullptr);
         if (thread) {
             CloseHandle(thread);
