@@ -160,19 +160,43 @@ static std::vector<Camo> CamoList = {
 
 static int selectedCamoIndex = 0;
 
+static bool IsAddressValid(uintptr_t addr, HANDLE hProc = nullptr);
+
 bool PatchWeaponID(uintptr_t addr, int id, HANDLE hProcess) {
-    mem::PatchEx((BYTE*)addr, (BYTE*)&id, sizeof(id), hProcess);
-    return true; // always returns true since PatchEx is void
+    if (!IsAddressValid(addr, hProcess))
+        return false;
+    return mem::TryPatchEx((BYTE*)addr, reinterpret_cast<const BYTE*>(&id), sizeof(id), hProcess);
 }
 
 bool PatchCamoID(uintptr_t addr2, int id, HANDLE hProcess) {
-    mem::PatchEx((BYTE*)addr2, (BYTE*)&id, sizeof(id), hProcess);
-    return true; // always returns true since PatchEx is void
+    if (!IsAddressValid(addr2, hProcess))
+        return false;
+    return mem::TryPatchEx((BYTE*)addr2, reinterpret_cast<const BYTE*>(&id), sizeof(id), hProcess);
+}
+static bool PatchIntIfValid(uintptr_t addr, int value, HANDLE hProc)
+{
+    if (!IsAddressValid(addr, hProc))
+        return false;
+    return mem::TryPatchEx((BYTE*)addr, reinterpret_cast<const BYTE*>(&value), sizeof(value), hProc);
+}
+
+static bool PatchBytesIfValid(uintptr_t addr, const BYTE* bytes, size_t size, HANDLE hProc)
+{
+    if (!IsAddressValid(addr, hProc))
+        return false;
+    return mem::TryPatchEx((BYTE*)addr, bytes, size, hProc);
+}
+
+static bool WriteStringIfValid(uintptr_t addr, const char* value, HANDLE hProc)
+{
+    if (!value || !IsAddressValid(addr, hProc))
+        return false;
+    return mem::TryWriteStringEx((BYTE*)addr, value, hProc);
 }
 
 
 
-bool bHealth = true, bAmmo = false, bRewardGiven = false, bCamoFlag = false, bName = false, bCamo = false, bNameToggle = false, bSvCheats = false, bDebug = false, bInstant = false, bNoclip = false, bToggleMW = false, bToggleQW = false, bToggleWW = false, bToggleEW = false, bToggleScore = false, bToggleAbilityDamage = false, bToggleSpeed = false, bToggleJump = false, bRainbow = false, bRainbow2 = false, bRainbow3 = false, bRainbowBypass = false, bRainbowCycle = false, bTest = false, bTest2 = false, bTest3 = false, bReviveGoldTU8E = false, bGoldTU8EHealth = false, bUnlimitedGrenades = false, bGoldTU8EFlag = true, bRapid = false;
+bool bHealth = false, bAmmo = false, bRewardGiven = false, bCamoFlag = false, bName = false, bCamo = false, bNameToggle = false, bSvCheats = false, bDebug = false, bInstant = false, bNoclip = false, bToggleMW = false, bToggleQW = false, bToggleWW = false, bToggleEW = false, bToggleScore = false, bToggleAbilityDamage = false, bToggleSpeed = false, bToggleJump = false, bRainbow = false, bRainbow2 = false, bRainbow3 = false, bRainbowBypass = false, bRainbowCycle = false, bTest = false, bTest2 = false, bTest3 = false, bReviveGoldTU8E = false, bGoldTU8EHealth = false, bUnlimitedGrenades = false, bGoldTU8EFlag = true, bRapid = false;
 bool bClan = false, isPatched = false, bBank = false, bSpirit = false;
 bool bHideCaption = false, bModSpoof = false;
 std::thread rainbowThread;
@@ -183,7 +207,7 @@ std::thread rainbowThread3;
 std::atomic<bool> stopThread3(false);
 
 static std::atomic<bool> bScanInProgress(false);
-static int    LastMapId = 0;
+static uint32_t LastMapId = 0;
 static bool   bWaitingForMap = true;
 static uintptr_t BankAddr = 0; // move these to file/class scope if not already
 
@@ -198,7 +222,7 @@ static bool   bWaitingForMod = true;
 // Returns true if 'addr' is non-zero and points to committed, readable memory
 // in the target process.  Pass hProcess = NULL to skip the VirtualQueryEx check
 // (safe before the handle is open).
-static bool IsAddressValid(uintptr_t addr, HANDLE hProc = nullptr)
+static bool IsAddressValid(uintptr_t addr, HANDLE hProc)
 {
     if (addr == 0)
         return false;
@@ -291,6 +315,89 @@ static void ResetAddresses()
     printf("[AUTO-ATTACH] All addresses reset.\n");
 }
 
+static uint32_t HashMapName(const char* mapName)
+{
+    uint32_t hash = 0;
+    if (!mapName)
+        return hash;
+
+    for (int i = 0; mapName[i] != '\0'; ++i)
+        hash = hash * 31u + static_cast<unsigned char>(mapName[i]);
+    return hash;
+}
+
+static bool IsBankMapId(uint32_t mapId)
+{
+    constexpr uint32_t kDieRiseMapId = 3596349812u; // zm_die
+    constexpr uint32_t kTranzitMapId = 3596365463u; // zm_tra
+    return mapId == kDieRiseMapId || mapId == kTranzitMapId;
+}
+
+static bool IsBankWeaponId(int weaponId)
+{
+    return weaponId == 246 || weaponId == 241;
+}
+
+static bool TryReadBankContext(char (&mapName)[16], uint32_t& mapId, int& weaponId)
+{
+    mapName[0] = '\0';
+    mapId = 0;
+    weaponId = 0;
+
+    if (!hProcess || !IsAddressValid(MapIdAddr, hProcess) || !IsAddressValid(MWeaponAddr, hProcess))
+        return false;
+
+    SIZE_T bytesRead = 0;
+    if (!ReadProcessMemory(hProcess, reinterpret_cast<LPCVOID>(MapIdAddr), mapName, sizeof(mapName) - 1, &bytesRead) || bytesRead == 0)
+        return false;
+    mapName[sizeof(mapName) - 1] = '\0';
+    mapId = HashMapName(mapName);
+
+    bytesRead = 0;
+    if (!ReadProcessMemory(hProcess, reinterpret_cast<LPCVOID>(MWeaponAddr), &weaponId, sizeof(weaponId), &bytesRead) ||
+        bytesRead != sizeof(weaponId))
+        return false;
+
+    return true;
+}
+
+static void LogBankGuardBlocked(const char* source, const char* reason)
+{
+    static ULONGLONG lastLogTick = 0;
+    const ULONGLONG now = GetTickCount64();
+    if (now - lastLogTick < 1500)
+        return;
+
+    lastLogTick = now;
+    printf("[BANK GUARD] %s blocked: %s\n", source ? source : "bank write", reason ? reason : "unknown");
+}
+
+static bool TryPatchBankValue(int value, const char* source)
+{
+    char mapName[16]{};
+    uint32_t mapId = 0;
+    int weaponId = 0;
+
+    if (!TryReadBankContext(mapName, mapId, weaponId)) {
+        LogBankGuardBlocked(source, "map/weapon address is not readable");
+        return false;
+    }
+    if (!IsBankMapId(mapId)) {
+        LogBankGuardBlocked(source, "map is not Tranzit or Die Rise");
+        return false;
+    }
+    if (!IsBankWeaponId(weaponId)) {
+        LogBankGuardBlocked(source, "weapon is not valid for bank action");
+        return false;
+    }
+    if (!IsAddressValid(BankAddr, hProcess)) {
+        LogBankGuardBlocked(source, "BankAddr is not valid");
+        return false;
+    }
+
+    return mem::TryPatchEx(reinterpret_cast<BYTE*>(BankAddr), reinterpret_cast<const BYTE*>(&value), sizeof(value), hProcess);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -360,7 +467,7 @@ void RainbowCycleLoop() {
 
         for (int RainbowValue = 1; RainbowValue <= 126; ++RainbowValue) {
             if (stopThread.load()) break;
-            mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&RainbowValue, sizeof(RainbowValue), hProcess);
+            PatchIntIfValid(CamoAddr2, RainbowValue, hProcess);
             std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Rainbow Delay //100 MS original value
         }
     }
@@ -370,7 +477,7 @@ void RainbowCycleLoop2() {
     while (!stopThread2.load()) {
         for (int RainbowValue2 = 1; RainbowValue2 <= 126; ++RainbowValue2) {
             if (stopThread2.load()) break;
-            mem::PatchEx((BYTE*)TableCamoAddr, (BYTE*)&RainbowValue2, sizeof(RainbowValue2), hProcess);
+            PatchIntIfValid(TableCamoAddr, RainbowValue2, hProcess);
             std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Rainbow Delay //100 MS original value
         }
     }
@@ -380,7 +487,7 @@ void RainbowCycleLoop3() {
     while (!stopThread3.load()) {
         for (int RainbowValue3 = 1; RainbowValue3 <= 126; ++RainbowValue3) {
             if (stopThread3.load()) break;
-            mem::PatchEx((BYTE*)CamoAddr5, (BYTE*)&RainbowValue3, sizeof(RainbowValue3), hProcess);
+            PatchIntIfValid(CamoAddr5, RainbowValue3, hProcess);
             std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Rainbow Delay //100 MS original value
         }
     }
@@ -515,6 +622,61 @@ struct ScanParams
 };
 static ScanParams g_ScanParams;
 
+struct BankScanResult
+{
+    uintptr_t address = 0;
+    const char* source = "none";
+};
+
+static BankScanResult ResolveBankAddressByBankPattern(HANDLE hProc)
+{
+    uintptr_t found = FindPatternEx(
+        hProc,
+        "\x9C\x50\xE5\xCB\x00\x00\x00\x00",
+        "xxxxxxxx"
+    );
+
+    printf("[BANK SCAN] bank pattern result: 0x%llX\n", found);
+    if (found == 0)
+        return {};
+
+    return { found - 0x28, "bank-pattern" };
+}
+
+static BankScanResult ResolveBankAddressByTablePattern(HANDLE hProc)
+{
+    uintptr_t found = FindPatternEx(
+        hProc,
+        "\xCD\x2C\xA8\x44\xAC\x4C\xB2\x43\xBE\xFF\x74\x43",
+        "xxxxxxxxxxxx"
+    );
+
+    printf("[BANK SCAN] table pattern probe result: 0x%llX\n", found);
+    if (found != 0) {
+        printf("[BANK SCAN] table pattern found, but no verified table-to-bank offset is configured yet.\n");
+    }
+    return {};
+}
+
+static BankScanResult ResolveBankAddressByFallbackSignature(HANDLE)
+{
+    printf("[BANK SCAN] signature fallback skipped; no verified bank fallback signature is configured yet.\n");
+    return {};
+}
+
+static BankScanResult ResolveBankAddress(HANDLE hProc)
+{
+    BankScanResult result = ResolveBankAddressByBankPattern(hProc);
+    if (result.address != 0)
+        return result;
+
+    result = ResolveBankAddressByTablePattern(hProc);
+    if (result.address != 0)
+        return result;
+
+    return ResolveBankAddressByFallbackSignature(hProc);
+}
+
 // Add this plain function near your other thread functions (RainbowCycleLoop etc)
 DWORD WINAPI ScanThread(LPVOID lpParam)
 {
@@ -522,23 +684,16 @@ DWORD WINAPI ScanThread(LPVOID lpParam)
 
     Sleep(2000);
 
-    uintptr_t found = FindPatternEx(
-        p->hProc,
-        "\x9C\x50\xE5\xCB\x00\x00\x00\x00",
-        "xxxxxxxx"
-    );
-
-    printf("[SCAN] FindPatternEx result: 0x%llX\n", found);
-
-    if (found != 0)
+    BankScanResult result = ResolveBankAddress(p->hProc);
+    if (result.address != 0)
     {
-        BankAddr = found - 0x28;
+        BankAddr = result.address;
         bWaitingForMap = false;
-        printf("[SCAN] BankAddr set: 0x%llX\n", BankAddr);
+        printf("[BANK SCAN] BankAddr set from %s: 0x%llX\n", result.source, BankAddr);
     }
     else
     {
-        printf("[SCAN] Pattern not found - will retry next frame\n");
+        printf("[BANK SCAN] BankAddr not resolved - will retry next eligible frame\n");
     }
 
     bScanInProgress = false;
@@ -663,24 +818,24 @@ int main(int, char**) {
 
         if (GetAsyncKeyState(VK_F5))
         {
-            mem::PatchEx((BYTE*)XCoordAddr, (BYTE*)&posX1, sizeof(posX1), hProcess);
-            mem::PatchEx((BYTE*)YCoordAddr, (BYTE*)&posY1, sizeof(posY1), hProcess);
-            mem::PatchEx((BYTE*)ZCoordAddr, (BYTE*)&posZ1, sizeof(posZ1), hProcess);
+            PatchBytesIfValid(XCoordAddr, reinterpret_cast<const BYTE*>(&posX1), sizeof(posX1), hProcess);
+            PatchBytesIfValid(YCoordAddr, reinterpret_cast<const BYTE*>(&posY1), sizeof(posY1), hProcess);
+            PatchBytesIfValid(ZCoordAddr, reinterpret_cast<const BYTE*>(&posZ1), sizeof(posZ1), hProcess);
         }
 
 
         if (GetAsyncKeyState(VK_F6))
         {
-            mem::PatchEx((BYTE*)XCoordAddr, (BYTE*)&posX2, sizeof(posX2), hProcess);
-            mem::PatchEx((BYTE*)YCoordAddr, (BYTE*)&posY2, sizeof(posY2), hProcess);
-            mem::PatchEx((BYTE*)ZCoordAddr, (BYTE*)&posZ2, sizeof(posZ2), hProcess);
+            PatchBytesIfValid(XCoordAddr, reinterpret_cast<const BYTE*>(&posX2), sizeof(posX2), hProcess);
+            PatchBytesIfValid(YCoordAddr, reinterpret_cast<const BYTE*>(&posY2), sizeof(posY2), hProcess);
+            PatchBytesIfValid(ZCoordAddr, reinterpret_cast<const BYTE*>(&posZ2), sizeof(posZ2), hProcess);
         }
 
         if (GetAsyncKeyState(VK_F7))
         {
-            mem::PatchEx((BYTE*)XCoordAddr, (BYTE*)&posX3, sizeof(posX3), hProcess);
-            mem::PatchEx((BYTE*)YCoordAddr, (BYTE*)&posY3, sizeof(posY3), hProcess);
-            mem::PatchEx((BYTE*)ZCoordAddr, (BYTE*)&posZ3, sizeof(posZ3), hProcess);
+            PatchBytesIfValid(XCoordAddr, reinterpret_cast<const BYTE*>(&posX3), sizeof(posX3), hProcess);
+            PatchBytesIfValid(YCoordAddr, reinterpret_cast<const BYTE*>(&posY3), sizeof(posY3), hProcess);
+            PatchBytesIfValid(ZCoordAddr, reinterpret_cast<const BYTE*>(&posZ3), sizeof(posZ3), hProcess);
         }
 
 
@@ -752,30 +907,19 @@ int main(int, char**) {
             if (ImGui::Button("Max Bank"))
             {
                 bBank = !bBank;
-
-
+                TryPatchBankValue(bBank ? m1 : m0, "Max Bank toggle");
             }
 
 
-
-
-            if (bBank)
+            static bool spiritPatched = false;
+            if (bSpirit && SpiritTimerAddr != 0)
             {
-                mem::PatchEx((BYTE*)BankAddr, (BYTE*)&m1, sizeof(m1), hProcess);
+                spiritPatched = PatchIntIfValid(SpiritTimerAddr, sp, hProcess) || spiritPatched;
             }
-            else
+            else if (spiritPatched)
             {
-                mem::PatchEx((BYTE*)BankAddr, (BYTE*)&m0, sizeof(m0), hProcess);
-            }
-
-
-            if (bSpirit)
-            {
-                mem::PatchEx((BYTE*)SpiritTimerAddr, (BYTE*)&sp, sizeof(sp), hProcess);
-            }
-            else
-            {
-                mem::PatchEx((BYTE*)SpiritTimerAddr, (BYTE*)&sp0, sizeof(sp0), hProcess);
+                if (PatchIntIfValid(SpiritTimerAddr, sp0, hProcess))
+                    spiritPatched = false;
             }
 
             /*
@@ -959,7 +1103,7 @@ int main(int, char**) {
                     }
 
 
-                    mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&originalCamoValue, sizeof(originalCamoValue), hProcess);
+                    PatchIntIfValid(CamoAddr2, originalCamoValue, hProcess);
                 }
             }
 
@@ -978,7 +1122,7 @@ int main(int, char**) {
                         rainbowThread2.join();
                     }
                     int staticColorValue = 0;
-                    mem::PatchEx((BYTE*)CamoAddr4, (BYTE*)&staticColorValue, sizeof(staticColorValue), hProcess);
+                    PatchIntIfValid(CamoAddr4, staticColorValue, hProcess);
                     //  mem::PatchEx((BYTE*)(moduleBase + 0x427A75), (BYTE*)"\x74\x0D", 2, hProcess);
                 }
             }
@@ -997,7 +1141,7 @@ int main(int, char**) {
                         rainbowThread3.join();
                     }
                     int staticColorValue = 0;
-                    mem::PatchEx((BYTE*)CamoAddr5, (BYTE*)&staticColorValue, sizeof(staticColorValue), hProcess);
+                    PatchIntIfValid(CamoAddr5, staticColorValue, hProcess);
                     //  mem::PatchEx((BYTE*)(moduleBase + 0x427A75), (BYTE*)"\x74\x0D", 2, hProcess);
                 }
             }
@@ -1320,67 +1464,79 @@ int main(int, char**) {
             }
         } // end auto re-attach block
 
+        static bool modSpoofPatched = false;
         if (bModSpoof && ModIdAddr == 3446990455)
         {
             uint32_t u = 2502333264u;
-            mem::PatchEx((BYTE*)ModIdAddr, (BYTE*)&u, sizeof(u), hProcess);
+            modSpoofPatched = PatchBytesIfValid(ModIdAddr, reinterpret_cast<const BYTE*>(&u), sizeof(u), hProcess) || modSpoofPatched;
         }
-        else
+        else if (modSpoofPatched)
         {
             uint32_t o = 3446990455u;
-            mem::PatchEx((BYTE*)ModIdAddr, (BYTE*)&o, sizeof(o), hProcess);
+            if (PatchBytesIfValid(ModIdAddr, reinterpret_cast<const BYTE*>(&o), sizeof(o), hProcess))
+                modSpoofPatched = false;
         }
 
+        static bool captionPatched = false;
         if (bHideCaption && !isCycling3)
         {
-            mem::WriteStringEx((BYTE*)CaptionAddr, "", hProcess);
+            captionPatched = WriteStringIfValid(CaptionAddr, "", hProcess) || captionPatched;
         }
-        else if (!bHideCaption && !isCycling3)
+        else if (captionPatched && !isCycling3)
         {
-            mem::WriteStringEx((BYTE*)CaptionAddr, "BO3Enhanced v1.16", hProcess);
+            if (WriteStringIfValid(CaptionAddr, "BO3Enhanced v1.16", hProcess))
+                captionPatched = false;
         }
         // if isCycling3 is true, neither block runs
 
 
 
+        static bool ammoPatched = false;
         if (bAmmo)
         {
-            mem::PatchEx((BYTE*)(moduleBase + 0x27C8234), (BYTE*)"\xC7\x84\x83\x84\x06\x00\x00\x67\x02\x00\x00\x90\x90\x90\x90", 15, hProcess);
+            const bool patchedAmmo = PatchBytesIfValid(moduleBase + 0x27C8234, reinterpret_cast<const BYTE*>("\xC7\x84\x83\x84\x06\x00\x00\x67\x02\x00\x00\x90\x90\x90\x90"), 15, hProcess);
 
             int A1 = 615;
-            mem::PatchEx((BYTE*)LeftPistolAddr, (BYTE*)&A1, sizeof(A1), hProcess);
-            //Unlimited Grenades 
-            mem::PatchEx((BYTE*)(moduleBase + 0x27C6E9A), (BYTE*)"\x8B\xFF", 2, hProcess);
+            const bool patchedPistol = PatchIntIfValid(LeftPistolAddr, A1, hProcess);
+            //Unlimited Grenades
+            const bool patchedGrenades = PatchBytesIfValid(moduleBase + 0x27C6E9A, reinterpret_cast<const BYTE*>("\x8B\xFF"), 2, hProcess);
+            ammoPatched = ammoPatched || (patchedAmmo && patchedPistol && patchedGrenades);
         }
-        else
+        else if (ammoPatched)
         {
-            mem::PatchEx((BYTE*)(moduleBase + 0x27C8234), (BYTE*)"\x83\xBC\x83\x84\x06\x00\x00\x00\x75\x0B\xB8\x01\x00\x00\x00", 15, hProcess);
+            const bool restoredAmmo = PatchBytesIfValid(moduleBase + 0x27C8234, reinterpret_cast<const BYTE*>("\x83\xBC\x83\x84\x06\x00\x00\x00\x75\x0B\xB8\x01\x00\x00\x00"), 15, hProcess);
 
 
-            mem::PatchEx((BYTE*)(moduleBase + 0x27C6E9A), (BYTE*)"\x8B\x01", 2, hProcess);
+            const bool restoredGrenades = PatchBytesIfValid(moduleBase + 0x27C6E9A, reinterpret_cast<const BYTE*>("\x8B\x01"), 2, hProcess);
+            if (restoredAmmo && restoredGrenades)
+                ammoPatched = false;
         }
 
 
+        static bool namePatched = false;
         if (bName)
         {
             bNameToggle = true;
             //mem::WriteStringEx((BYTE*)NameAddr, "^1[DivX]SyntaX-_-", hProcess);
-            mem::WriteStringEx((BYTE*)NameAddr, "Danny", hProcess);
+            namePatched = WriteStringIfValid(NameAddr, "Danny", hProcess) || namePatched;
         }
-        else
+        else if (namePatched)
         {
             bNameToggle = false;
-            mem::WriteStringEx((BYTE*)NameAddr, "^1SyntaX-_-", hProcess);
+            if (WriteStringIfValid(NameAddr, "^1SyntaX-_-", hProcess))
+                namePatched = false;
         }
 
 
+        static bool nameRainbowPatched = false;
         if (isPatched)
         {
-            mem::PatchEx((BYTE*)(moduleBase + 0x27EB255), (BYTE*)"\x75\x06", 2, hProcess);
+            nameRainbowPatched = PatchBytesIfValid(moduleBase + 0x27EB255, reinterpret_cast<const BYTE*>("\x75\x06"), 2, hProcess) || nameRainbowPatched;
         }
-        else
+        else if (nameRainbowPatched)
         {
-            mem::PatchEx((BYTE*)(moduleBase + 0x27EB255), (BYTE*)"\x74\x06", 2, hProcess);
+            if (PatchBytesIfValid(moduleBase + 0x27EB255, reinterpret_cast<const BYTE*>("\x74\x06"), 2, hProcess))
+                nameRainbowPatched = false;
         }
 
         if (bClan)
@@ -1392,7 +1548,7 @@ int main(int, char**) {
             //size_t Offset = 116;
             BYTE camoValue = 0x42;
            // mem::PatchEx((BYTE*)(HookClanByte ), &camoValue, sizeof(camoValue), hProcess);
-            mem::WriteStringEx((BYTE*)(HookClanByte), "3arc", hProcess);
+            WriteStringIfValid(HookClanByte, "3arc", hProcess);
 
 
         */
@@ -1431,13 +1587,13 @@ int main(int, char**) {
         {
             const size_t lastByteOffset = 23;
             BYTE Galaxy = 0x7D;
-            mem::PatchEx((BYTE*)(HookLastByteAddr + lastByteOffset), &Galaxy, sizeof(Galaxy), hProcess);
+            PatchBytesIfValid(HookLastByteAddr + lastByteOffset, &Galaxy, sizeof(Galaxy), hProcess);
         }
 
 
         if (GetAsyncKeyState(VK_F4))
         {
-            mem::PatchEx((BYTE*)BankAddr, (BYTE*)&m1, sizeof(m1), hProcess);
+            TryPatchBankValue(m1, "F4 bank hotkey");
         }
 
 
@@ -1466,42 +1622,48 @@ int main(int, char**) {
         }
         */
 
+        static bool svCheatsPatched = false;
         if (bSvCheats)
         {
-            //   int C1 = 285587035;
-            mem::PatchEx((BYTE*)SvCheatsAddr, (BYTE*)&ON, sizeof(ON), hProcess);
+            svCheatsPatched = PatchIntIfValid(SvCheatsAddr, ON, hProcess) || svCheatsPatched;
         }
-        else
+        else if (svCheatsPatched)
         {
-            // int C1 = 694749996;
-            mem::PatchEx((BYTE*)SvCheatsAddr, (BYTE*)&OFF, sizeof(OFF), hProcess);
+            if (PatchIntIfValid(SvCheatsAddr, OFF, hProcess))
+                svCheatsPatched = false;
         }
 
 
 
+        static bool rapidPatched = false;
         if (bRapid)//Need logic for burst fire weapons
         {
-            mem::PatchEx((BYTE*)(moduleBase + 0x27B6353), (BYTE*)"\xC7\x04\x38\x00\x00\x00\x00\x90\x90\x90", 10, hProcess);
-            mem::PatchEx((BYTE*)(moduleBase + 0x27C6519), (BYTE*)"\xC7\x40\x2C\x02\x00\x00\x00\x90\x90", 9, hProcess);//Shotguns
+            const bool patchedRifles = PatchBytesIfValid(moduleBase + 0x27B6353, reinterpret_cast<const BYTE*>("\xC7\x04\x38\x00\x00\x00\x00\x90\x90\x90"), 10, hProcess);
+            const bool patchedShotguns = PatchBytesIfValid(moduleBase + 0x27C6519, reinterpret_cast<const BYTE*>("\xC7\x40\x2C\x02\x00\x00\x00\x90\x90"), 9, hProcess);//Shotguns
+            rapidPatched = rapidPatched || (patchedRifles && patchedShotguns);
 
 
         }
-        else
+        else if (rapidPatched)
         {
-            mem::PatchEx((BYTE*)(moduleBase + 0x27B6353), (BYTE*)"\x89\x0C\x38\x44\x38\xAE\x68\x0E\x00\x00", 10, hProcess);
-            mem::PatchEx((BYTE*)(moduleBase + 0x27C6519), (BYTE*)"\x44\x08\x70\x2C\xE8\x5E\xB4\x00\x00", 9, hProcess);
+            const bool restoredRifles = PatchBytesIfValid(moduleBase + 0x27B6353, reinterpret_cast<const BYTE*>("\x89\x0C\x38\x44\x38\xAE\x68\x0E\x00\x00"), 10, hProcess);
+            const bool restoredShotguns = PatchBytesIfValid(moduleBase + 0x27C6519, reinterpret_cast<const BYTE*>("\x44\x08\x70\x2C\xE8\x5E\xB4\x00\x00"), 9, hProcess);
+            if (restoredRifles && restoredShotguns)
+                rapidPatched = false;
 
         }
 
+        static bool instantPatched = false;
         if (bInstant)
         {
 
-            mem::PatchEx((BYTE*)(moduleBase + 0x26279A5), (BYTE*)"\x0F\x8C", 2, hProcess);
+            instantPatched = PatchBytesIfValid(moduleBase + 0x26279A5, reinterpret_cast<const BYTE*>("\x0F\x8C"), 2, hProcess) || instantPatched;
 
         }
-        else
+        else if (instantPatched)
         {
-            mem::PatchEx((BYTE*)(moduleBase + 0x26279A5), (BYTE*)"\x0F\x8F", 2, hProcess);
+            if (PatchBytesIfValid(moduleBase + 0x26279A5, reinterpret_cast<const BYTE*>("\x0F\x8F"), 2, hProcess))
+                instantPatched = false;
         }
 
 
@@ -1567,12 +1729,14 @@ int main(int, char**) {
             static SHORT prevF4State = 0;
 
             int N1 = 0;
-            ReadProcessMemory(hProcess, (LPCVOID)MWeaponAddr, &N1, sizeof(N1), nullptr);
+            if (!IsAddressValid(MWeaponAddr, hProcess) ||
+                !ReadProcessMemory(hProcess, (LPCVOID)MWeaponAddr, &N1, sizeof(N1), nullptr))
+                N1 = 0;
             SHORT currentF3State = GetAsyncKeyState(VK_F3);
             if ((currentF3State & 0x8000) && !(prevF3State & 0x8000))
             {
                 N1--;
-                mem::PatchEx((BYTE*)MWeaponAddr, (BYTE*)&N1, sizeof(N1), hProcess);
+                PatchIntIfValid(MWeaponAddr, N1, hProcess);
             }
             prevF3State = currentF3State;
 
@@ -1580,7 +1744,7 @@ int main(int, char**) {
             if ((currentF4State & 0x8000) && !(prevF4State & 0x8000))
             {
                 N1++;
-                mem::PatchEx((BYTE*)MWeaponAddr, (BYTE*)&N1, sizeof(N1), hProcess);
+                PatchIntIfValid(MWeaponAddr, N1, hProcess);
             }
             prevF4State = currentF4State;
         }
@@ -1592,12 +1756,14 @@ int main(int, char**) {
             static SHORT prevF4State = 0;
 
             int N1 = 0;
-            ReadProcessMemory(hProcess, (LPCVOID)CamoAddr2, &N1, sizeof(N1), nullptr);
+            if (!IsAddressValid(CamoAddr2, hProcess) ||
+                !ReadProcessMemory(hProcess, (LPCVOID)CamoAddr2, &N1, sizeof(N1), nullptr))
+                N1 = 0;
             SHORT currentF3State = GetAsyncKeyState(VK_F3);
             if ((currentF3State & 0x8000) && !(prevF3State & 0x8000))
             {
                 N1--;
-                mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&N1, sizeof(N1), hProcess);
+                PatchIntIfValid(CamoAddr2, N1, hProcess);
             }
             prevF3State = currentF3State;
 
@@ -1605,7 +1771,7 @@ int main(int, char**) {
             if ((currentF4State & 0x8000) && !(prevF4State & 0x8000))
             {
                 N1++;
-                mem::PatchEx((BYTE*)CamoAddr2, (BYTE*)&N1, sizeof(N1), hProcess);
+                PatchIntIfValid(CamoAddr2, N1, hProcess);
             }
             prevF4State = currentF4State;
         }
@@ -1616,29 +1782,32 @@ int main(int, char**) {
             if (GetAsyncKeyState(0x45))  // key is down
             {
                 int N1 = 1;
-                mem::PatchEx((BYTE*)NoclipAddr, (BYTE*)&N1, sizeof(N1), hProcess);
+                PatchIntIfValid(NoclipAddr, N1, hProcess);
             }
             else
             {
                 int N0 = 0;
-                mem::PatchEx((BYTE*)NoclipAddr, (BYTE*)&N0, sizeof(N0), hProcess);
+                PatchIntIfValid(NoclipAddr, N0, hProcess);
             }
         }
 
+        static bool healthPatched = false;
         if (bHealth && GodAddr != 0) {
             int God = 12297;
-            mem::PatchEx((BYTE*)GodAddr, (BYTE*)&God, sizeof(God), hProcess);
+            healthPatched = PatchIntIfValid(GodAddr, God, hProcess) || healthPatched;
         }
-        else
+        else if (healthPatched)
         {
             int God = 12296;
-            mem::PatchEx((BYTE*)GodAddr, (BYTE*)&God, sizeof(God), hProcess);
+            if (PatchIntIfValid(GodAddr, God, hProcess))
+                healthPatched = false;
         }
 
+        static bool goldTU8EHealthPatched = false;
         if (bGoldTU8EHealth && GoldTU8EHealthAddr != 0) {
             const int uHealth = 13337;
             Sleep(5);
-            mem::PatchEx((BYTE*)GoldTU8EHealthAddr, (BYTE*)&uHealth, sizeof(uHealth), hProcess);
+            goldTU8EHealthPatched = PatchIntIfValid(GoldTU8EHealthAddr, uHealth, hProcess) || goldTU8EHealthPatched;
 
 
 
@@ -1655,7 +1824,7 @@ int main(int, char**) {
 
                 const std::string& currentTarget = targets[targetIndex];
 
-                mem::PatchEx((BYTE*)HookClanByte, (BYTE*)currentTarget.c_str(), static_cast<unsigned int>(currentTarget.size()), hProcess);
+                PatchBytesIfValid(HookClanByte, reinterpret_cast<const BYTE*>(currentTarget.c_str()), currentTarget.size(), hProcess);
 
                 lastCycleTime = currentTime;
             }
@@ -1674,7 +1843,7 @@ int main(int, char**) {
 
                 const std::string& currentTarget2 = targets2[targetIndex2];
 
-                mem::PatchEx((BYTE*)GoldTU8ENameAddr, (BYTE*)currentTarget2.c_str(), static_cast<unsigned int>(currentTarget2.size()), hProcess);
+                PatchBytesIfValid(GoldTU8ENameAddr, reinterpret_cast<const BYTE*>(currentTarget2.c_str()), currentTarget2.size(), hProcess);
 
                 lastCycleTime2 = currentTime2;
             }
@@ -1692,17 +1861,18 @@ int main(int, char**) {
 
                 const std::string& currentTarget3 = targets3[targetIndex3];
 
-                mem::PatchEx((BYTE*)CaptionAddr, (BYTE*)currentTarget3.c_str(), static_cast<unsigned int>(currentTarget3.size()), hProcess);
+                PatchBytesIfValid(CaptionAddr, reinterpret_cast<const BYTE*>(currentTarget3.c_str()), currentTarget3.size(), hProcess);
 
                 lastCycleTime3 = currentTime3;
             }
 
         }
 
-        if (!bGoldTU8EHealth && GoldTU8EHealthAddr != 0)
+        if (!bGoldTU8EHealth && goldTU8EHealthPatched)
         {
             int UHealth = 100;
-            mem::PatchEx((BYTE*)GoldTU8EHealthAddr, (BYTE*)&UHealth, sizeof(UHealth), hProcess);
+            if (PatchIntIfValid(GoldTU8EHealthAddr, UHealth, hProcess))
+                goldTU8EHealthPatched = false;
             //mem::PatchEx((BYTE*)(moduleBase + 0x1CFF64), (BYTE*)"\xC7\x86\x70\x02\x00\x00\x08\x00\x00\x00", 10, hProcess);
            // mem::PatchEx((BYTE*)(moduleBase + 0x2BA72F), (BYTE*)"\xFF\x48\x04", 3, hProcess);
         }
@@ -1710,22 +1880,22 @@ int main(int, char**) {
 
         if (bToggleMW && MWeaponAddr != 0)
         {
-            mem::PatchEx((BYTE*)MWeaponAddr, (BYTE*)&MWeaponId, sizeof(MWeaponId), hProcess);
+            PatchIntIfValid(MWeaponAddr, MWeaponId, hProcess);
         }
 
         if (bToggleQW && QWeaponAddr != 0)
         {
-            mem::PatchEx((BYTE*)QWeaponAddr, (BYTE*)&QWeaponId, sizeof(QWeaponId), hProcess);
+            PatchIntIfValid(QWeaponAddr, QWeaponId, hProcess);
         }
 
         if (bToggleWW && WWeaponAddr != 0)
         {
-            mem::PatchEx((BYTE*)WWeaponAddr, (BYTE*)&WWeaponId, sizeof(WWeaponId), hProcess);
+            PatchIntIfValid(WWeaponAddr, WWeaponId, hProcess);
         }
 
         if (bToggleEW && EWeaponAddr != 0)
         {
-            mem::PatchEx((BYTE*)EWeaponAddr, (BYTE*)&EWeaponId, sizeof(EWeaponId), hProcess);
+            PatchIntIfValid(EWeaponAddr, EWeaponId, hProcess);
         }
 
 
@@ -1733,7 +1903,7 @@ int main(int, char**) {
 
         if (bToggleScore && ScoreAddr != 0)
         {
-            mem::PatchEx((BYTE*)ScoreAddr, (BYTE*)&ScoreId, sizeof(ScoreId), hProcess);
+            PatchIntIfValid(ScoreAddr, ScoreId, hProcess);
         }
         else
         {
@@ -1758,61 +1928,69 @@ int main(int, char**) {
         if (MapIdAddr != 0 && MWeaponAddr != 0)
         {
             char CurrentMapStr[16] = {};
+            uint32_t CurrentMapId2 = 0;
             int CurrentWeapId2 = 0;
+            bool bankContextReady = TryReadBankContext(CurrentMapStr, CurrentMapId2, CurrentWeapId2);
 
-            ReadProcessMemory(hProcess, (LPCVOID)MapIdAddr, CurrentMapStr, sizeof(CurrentMapStr) - 1, nullptr);
-            CurrentMapStr[sizeof(CurrentMapStr) - 1] = '\0'; // ensure null-termination
-            ReadProcessMemory(hProcess, (LPCVOID)MWeaponAddr, &CurrentWeapId2, sizeof(CurrentWeapId2), nullptr);
-
-            bool bValidMap = (strcmp(CurrentMapStr, "zm_die") == 0 || strcmp(CurrentMapStr, "zm_tra") == 0);
-            bool bValidWeapon = (CurrentWeapId2 == 246 || CurrentWeapId2 == 241);
-
-            // Use a hash of the string as a change-detector (same role as the old int comparison)
-            int CurrentMapId2 = 0;
-            for (int i = 0; CurrentMapStr[i] != '\0'; ++i)
-                CurrentMapId2 = CurrentMapId2 * 31 + static_cast<unsigned char>(CurrentMapStr[i]);
-
-            if (CurrentMapId2 != LastMapId)
-            {
-                BankAddr = 0;
-                LastMapId = CurrentMapId2;
-                bWaitingForMap = true;
-                bScanInProgress = false;
-                // system("cls");
-                printf("[MAP CHANGE] New Map: %s | BankAddr reset\n", CurrentMapStr);
-            }
-
-            if (!bValidMap)
-            {
-                BankAddr = 0;
-                ClipIdAddr = 7;
-            }
-
-            if (!bValidWeapon)
+            if (!bankContextReady)
             {
                 if (BankAddr != 0)
                 {
                     BankAddr = 0;
-                    //   system("cls");
-                    printf("[WEAPON CHANGE] WeapId: %d is not valid | BankAddr reset\n", CurrentWeapId2);
+                    printf("[BANK GUARD] map/weapon context became unreadable | BankAddr reset\n");
                 }
                 bWaitingForMap = true;
                 bScanInProgress = false;
             }
 
-            if (bWaitingForMap && BankAddr == 0 && bValidMap && bValidWeapon && !bScanInProgress)
+            if (bankContextReady)
             {
-                bScanInProgress = true;
-                g_ScanParams.hProc = hProcess;
-                printf("[SCAN] Conditions met - launching scan thread...\n");
+                bool bValidMap = IsBankMapId(CurrentMapId2);
+                bool bValidWeapon = IsBankWeaponId(CurrentWeapId2);
 
-                HANDLE hThread = CreateThread(nullptr, 0, ScanThread, &g_ScanParams, 0, nullptr);
-                if (hThread)
-                    CloseHandle(hThread);
+                if (CurrentMapId2 != LastMapId)
+                {
+                    BankAddr = 0;
+                    LastMapId = CurrentMapId2;
+                    bWaitingForMap = true;
+                    bScanInProgress = false;
+                    // system("cls");
+                    printf("[MAP CHANGE] New Map: %s | BankAddr reset\n", CurrentMapStr);
+                }
+
+                if (!bValidMap)
+                {
+                    BankAddr = 0;
+                    ClipIdAddr = 7;
+                }
+
+                if (!bValidWeapon)
+                {
+                    if (BankAddr != 0)
+                    {
+                        BankAddr = 0;
+                        //   system("cls");
+                        printf("[WEAPON CHANGE] WeapId: %d is not valid | BankAddr reset\n", CurrentWeapId2);
+                    }
+                    bWaitingForMap = true;
+                    bScanInProgress = false;
+                }
+
+                if (bWaitingForMap && BankAddr == 0 && bValidMap && bValidWeapon && !bScanInProgress)
+                {
+                    bScanInProgress = true;
+                    g_ScanParams.hProc = hProcess;
+                    printf("[BANK SCAN] Conditions met for %s / weapon %d - launching scan thread...\n",
+                        CurrentMapStr, CurrentWeapId2);
+
+                    HANDLE hThread = CreateThread(nullptr, 0, ScanThread, &g_ScanParams, 0, nullptr);
+                    if (hThread)
+                        CloseHandle(hThread);
+                }
             }
 
             // ── Spirit timer scan: zm_prison + weapon 143 ─────────────────────
-            bool bPrisonMap = (strcmp(CurrentMapStr, "zm_prison") == 0);
+            bool bPrisonMap = bankContextReady && (strcmp(CurrentMapStr, "zm_prison") == 0);
             //bool bSpiritWeapon = (CurrentWeapId2 == 191);//143 is afterlife hands
 
             if (!bPrisonMap)
@@ -1839,7 +2017,7 @@ int main(int, char**) {
 
             //A5 9B 56 DF 00 00 00 00 87
             // ── Mod scan: zm_core (main menu map) ────────────────────────────────
-            bool bMenuMap = (strcmp(CurrentMapStr, "core_frontend") == 0);
+            bool bMenuMap = bankContextReady && (strcmp(CurrentMapStr, "core_frontend") == 0);
 
             if (!bMenuMap)
             {

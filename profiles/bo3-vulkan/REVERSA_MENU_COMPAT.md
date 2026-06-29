@@ -53,3 +53,15 @@ BO3Enhanced dependency signals:
 3. Keep bank actions behind valid map, valid weapon, and valid `BankAddr`.
 4. Keep `hookClanByte` and `camoByte` behind their own address validation, not bank map/weapon checks.
 5. Run the same Eisen route after each bridge change and compare capture manifests.
+
+## Current ConsoleIX Guard State
+
+- Weapon and camo selector writes now fail closed when their resolved target
+  address is unreadable.
+- Bank writes go through one guard: readable `MapIdAddr`, readable weapon
+  address, `zm_die` or `zm_tra` map identity, weapon `246` or `241`, and valid
+  `BankAddr`.
+- Bank scan order is now named in logs: bank pattern first, table pattern probe
+  second, signature fallback last. The table and fallback phases are deliberately
+  non-writing until a verified bank offset/signature is configured.
+- Clan/caption/camo visual paths are not blocked by the bank map/weapon guard.
