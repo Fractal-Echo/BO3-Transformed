@@ -7,6 +7,9 @@
 // Retrieves the process ID of a running process by its name
 DWORD GetProcId(const wchar_t* procName);
 
+// Retrieves the process ID without logging when the process is not running.
+DWORD TryGetProcId(const wchar_t* procName);
+
 // Retrieves the base address of a module in the target process
 uintptr_t GetModuleBaseAddress(DWORD procId, const wchar_t* modName);
 

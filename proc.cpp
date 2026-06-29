@@ -2,15 +2,15 @@
 #include <tlhelp32.h>
 #include <iostream> // For error logging
 
-// Retrieves the process ID of a running process by its name
-DWORD GetProcId(const wchar_t* procName)
+// Retrieves the process ID of a running process by its name without noisy logs.
+DWORD TryGetProcId(const wchar_t* procName)
 {
     DWORD procId = 0;
     HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnap == INVALID_HANDLE_VALUE)
     {
         std::cerr << "[ERROR] CreateToolhelp32Snapshot failed: " << GetLastError() << std::endl;
-        return 0; // Return 0 to indicate failure
+        return 0;
     }
 
     PROCESSENTRY32 procEntry;
@@ -27,12 +27,18 @@ DWORD GetProcId(const wchar_t* procName)
         } while (Process32Next(hSnap, &procEntry));
     }
 
+    CloseHandle(hSnap);
+    return procId;
+}
+
+// Retrieves the process ID of a running process by its name
+DWORD GetProcId(const wchar_t* procName)
+{
+    DWORD procId = TryGetProcId(procName);
     if (procId == 0)
     {
         std::cerr << "[ERROR] Process not found: " << procName << std::endl;
     }
-
-    CloseHandle(hSnap);
     return procId;
 }
 

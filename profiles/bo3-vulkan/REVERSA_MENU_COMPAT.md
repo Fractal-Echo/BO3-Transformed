@@ -39,6 +39,8 @@ BO3Enhanced dependency signals:
 ## Reversa Actions
 
 - Detect and report `Steam/T7`, `BO3Enhanced`, or `Unknown` runtime lane.
+- ConsoleIX auto-attach prefers `WSBlackOps3.exe` when BO3Enhanced is running,
+  then falls back to `BlackOps3.exe`.
 - Keep D3D11 factory hooks disabled by default for T7 and BO3Enhanced lanes.
 - Generate a stable training contract at
   `profiles/bo3-vulkan/training/BO3ENHANCED_MENU_CONTRACT.md`.

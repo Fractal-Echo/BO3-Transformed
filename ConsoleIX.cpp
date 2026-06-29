@@ -223,6 +223,50 @@ HANDLE hProcess;
 uintptr_t moduleBase = 0, DllBase = 0, HookLastByteAddr = 0, HookClanByte = 0, SigCamoAddr = 0, ModIdAddr = 0, TestAddr = 0, LeftPistolAddr = 0, AmmoBaseAddr = 0, NameAddr = 0, NameBaseAddr = 0, MapIdAddr = 0, ConnectionIDAddr = 0, WeaponInHandAddr = 0, TableBase = 0, SvCheatsAddr = 0, DeveloperAddr = 0, TWeaponAddr = 0, LocalPlayerOffset = 0, ZombiesCountAddr = 0, CamoAddr1 = 0, CamoAddr2 = 0, CamoAddr3 = 0, CamoAddr4 = 0, CamoAddr5 = 0, XCoordAddr = 0, YCoordAddr = 0, ZCoordAddr = 0, NoclipAddr = 0, GoldTU8EHealthAddr = 0, GoldTU8EBaseAddr = 0, GoldTU8ENameAddr = 0, GodBaseAddr = 0, GodAddr = 0, MWeaponAddr = 0, QWeaponAddr = 0, WWeaponAddr = 0, EWeaponAddr = 0, ScoreAddr = 0, ScoreBaseAddr = 0, ClassCamoBaseAddr = 0, ClassCamoAddr = 0;
 uintptr_t TestAddr2 = 0, TableCamoAddr = 0, EntityList = 0, DistanceBetween = 0, HealthAddr = 0, ClipIdAddr = 0, SpiritTimerAddr = 0;
 uintptr_t CaptionAddr = 0;
+
+enum class BO3RuntimeLane {
+    Unknown,
+    SteamT7,
+    BO3Enhanced
+};
+
+struct BO3RuntimeTarget {
+    const wchar_t* processName;
+    const char* label;
+    BO3RuntimeLane lane;
+};
+
+static constexpr BO3RuntimeTarget kBO3RuntimeTargets[] = {
+    { L"WSBlackOps3.exe", "BO3Enhanced", BO3RuntimeLane::BO3Enhanced },
+    { L"BlackOps3.exe", "Steam/T7", BO3RuntimeLane::SteamT7 }
+};
+
+static const BO3RuntimeTarget* gRuntimeTarget = nullptr;
+static BO3RuntimeLane gRuntimeLane = BO3RuntimeLane::Unknown;
+
+static const char* CurrentRuntimeLabel()
+{
+    return gRuntimeTarget ? gRuntimeTarget->label : "Unknown";
+}
+
+static const wchar_t* CurrentRuntimeProcessName()
+{
+    return gRuntimeTarget ? gRuntimeTarget->processName : L"BlackOps3.exe";
+}
+
+static DWORD ResolveBO3RuntimeProcess(const BO3RuntimeTarget*& outTarget)
+{
+    for (const BO3RuntimeTarget& target : kBO3RuntimeTargets) {
+        DWORD foundProcId = TryGetProcId(target.processName);
+        if (foundProcId != 0) {
+            outTarget = &target;
+            return foundProcId;
+        }
+    }
+
+    outTarget = nullptr;
+    return 0;
+}
 // probe fails.
 static void ResetAddresses()
 {
@@ -1010,10 +1054,13 @@ int main(int, char**) {
                 DWORD exitCode = STILL_ACTIVE;
                 if (!GetExitCodeProcess(hProcess, &exitCode) || exitCode != STILL_ACTIVE)
                 {
-                    printf("[AUTO-ATTACH] BlackOps3.exe closed (exit 0x%X). Waiting for relaunch...\n", exitCode);
+                    printf("[AUTO-ATTACH] %s closed (exit 0x%X). Waiting for relaunch...\n",
+                        CurrentRuntimeLabel(), exitCode);
                     CloseHandle(hProcess);
                     hProcess = nullptr;
                     procId = 0;
+                    gRuntimeTarget = nullptr;
+                    gRuntimeLane = BO3RuntimeLane::Unknown;
                     ResetAddresses();
                     needReattach = true;
                 }
@@ -1033,16 +1080,38 @@ int main(int, char**) {
             }
 
             if (procId == 0) {
-                procId = GetProcId(L"BlackOps3.exe");
+                const BO3RuntimeTarget* resolvedTarget = nullptr;
+                procId = ResolveBO3RuntimeProcess(resolvedTarget);
+                if (procId != 0 && resolvedTarget != nullptr) {
+                    gRuntimeTarget = resolvedTarget;
+                    gRuntimeLane = resolvedTarget->lane;
+                    printf("[AUTO-ATTACH] %s detected as %ls (PID %lu).\n",
+                        CurrentRuntimeLabel(), CurrentRuntimeProcessName(), procId);
+                }
             }
 
             if (procId != 0 && (hProcess == nullptr || needReattach)) {
                 if (hProcess == nullptr)
                     hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, procId);
                 if (hProcess) {
-                    moduleBase = GetModuleBaseAddress(procId, L"BlackOps3.exe");
+                    moduleBase = GetModuleBaseAddress(procId, CurrentRuntimeProcessName());
                     DllBase = GetModuleBaseAddress(procId, L"T7InternalWS.dll");
-                    CaptionAddr = DllBase + 0x50000;
+                    if (moduleBase == 0) {
+                        printf("[AUTO-ATTACH] %s module base was not resolved; attach aborted.\n",
+                            CurrentRuntimeLabel());
+                        CloseHandle(hProcess);
+                        hProcess = nullptr;
+                        procId = 0;
+                        gRuntimeTarget = nullptr;
+                        gRuntimeLane = BO3RuntimeLane::Unknown;
+                        ResetAddresses();
+                        goto AutoAttachDone;
+                    }
+                    if (DllBase == 0) {
+                        printf("[AUTO-ATTACH] T7InternalWS.dll not found for %s; caption/rainbow bridge disabled until it loads.\n",
+                            CurrentRuntimeLabel());
+                    }
+                    CaptionAddr = DllBase != 0 ? DllBase + 0x50000 : 0;
                     EntityList = moduleBase + 0x7DD48D8;
                     DistanceBetween = 0x3088;
                     WeaponInHandAddr = moduleBase + 0x7D953F0;
@@ -1671,9 +1740,7 @@ int main(int, char**) {
 
         }
         //Recode this for lobby id detection but it serves it's purpose
-        bool ClanFound = false;
-
-        if (bClan && !ClanFound)
+        if (bClan)
         {
             /*
             HookClanByte = FindPatternEx(hProcess, "\x5B\x33\x33\x5D\x5E", "xxxxx");
@@ -1796,6 +1863,9 @@ int main(int, char**) {
                     CloseHandle(hModThread);
             }
         }
+
+        AutoAttachDone:
+            ;
 
         ImGui::Render();
 
