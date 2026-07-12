@@ -8,7 +8,7 @@ if (-not (Test-Path $vsWhere)) {
     throw "vswhere.exe was not found. Install Visual Studio Build Tools 2022 with the C++ workload."
 }
 
-$installPath = & $vsWhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+$installPath = & $vsWhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if (-not $installPath) {
     throw "MSVC build tools were not found. Install Visual Studio Build Tools 2022 with the C++ workload."
 }

@@ -24,9 +24,23 @@ Recommended build path:
 powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1
 ```
 
+   Or invoke the same Windows toolchain from WSL through the checked-in bridge:
+
+```sh
+bash scripts/build-windows-from-wsl.sh release
+```
+
+   The bridge starts PowerShell from `C:\Windows\Temp` and normalizes `TEMP`
+   and `TMP`. This avoids UNC-current-directory failures without copying the
+   source tree out of WSL. Use `overlay` instead of `release` to build the
+   Reversa DXGI/D3D11 proxy pair. The `dxvk` target runs the pinned DXVK fetch
+   and digest-verification script through the same bridge.
+
 3. Run the output as administrator when attaching to `BlackOps3.exe`.
 
-WSL is not currently configured as the compiler environment for this project. Treat WSL as the clean repo/build-space staging area unless a dedicated cross-build setup is added later.
+WSL remains the source-control environment. Compilation is performed by the
+installed Windows MSVC toolchain through the bridge above; WSL does not attempt
+to cross-compile the executable.
 
 ## Current Focus
 

@@ -31,6 +31,17 @@ The goal is to measure and tune frametime stability before experimenting with fr
 powershell -ExecutionPolicy Bypass -File .\scripts\fetch-dxvk-release.ps1
 ```
 
+From WSL, the equivalent command is:
+
+```sh
+bash scripts/build-windows-from-wsl.sh dxvk
+```
+
+The fetcher defaults to DXVK `v3.0` and requires SHA-256
+`7dd3243fe1b260a0e9b0b9e49d672ae32e3398bee18c97e7e8569d0ef0eca92d`.
+Selecting another version requires an explicit `-ExpectedSha256`; unpinned
+`latest` downloads are intentionally unsupported.
+
 2. Launch BO3 through the profile:
 
 ```powershell
