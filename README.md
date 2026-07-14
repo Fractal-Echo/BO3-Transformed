@@ -1,6 +1,10 @@
 # BO3 Transformed
 
-Tooling and experiments for Black Ops 3 Zombies custom maps.
+Black Ops 3 Zombies runtime research for deterministic builds, overlays,
+frame-time telemetry, and DXVK/Vulkan experiments.
+
+This is a lab repo, not a magic-button patch dump. Changes are kept small enough
+to review, rebuild, and reverse when the game disagrees.
 
 ## Workspace
 
@@ -11,7 +15,9 @@ cd ~/repositories/BO3-Transformed
 git status
 ```
 
-The executable target is Windows-only. `ConsoleIX.vcxproj` uses WinAPI, OpenGL, GLFW, ImGui, and bundled Windows `.lib` files, so build it with Visual Studio/MSBuild on Windows.
+The executable target is Windows-only. `ConsoleIX.vcxproj` uses WinAPI, OpenGL,
+GLFW, ImGui, and bundled Windows `.lib` files, so build it with Visual
+Studio/MSBuild on Windows.
 
 ## Build Target
 
@@ -32,11 +38,13 @@ bash scripts/build-windows-from-wsl.sh release
 
    The bridge starts PowerShell from `C:\Windows\Temp` and normalizes `TEMP`
    and `TMP`. This avoids UNC-current-directory failures without copying the
-   source tree out of WSL. Use `overlay` instead of `release` to build the
-   Reversa DXGI/D3D11 proxy pair. The `dxvk` target runs the pinned DXVK fetch
-   and digest-verification script through the same bridge.
+   source tree out of WSL.
 
-3. Run the output as administrator when attaching to `BlackOps3.exe`.
+   Use `overlay` instead of `release` to build the Reversa DXGI/D3D11 proxy
+   pair. The `dxvk` target runs the pinned DXVK fetch and digest-verification
+   script through the same bridge.
+
+3. Run the output as administrator only when attaching to `BlackOps3.exe`.
 
 WSL remains the source-control environment. Compilation is performed by the
 installed Windows MSVC toolchain through the bridge above; WSL does not attempt
@@ -46,11 +54,34 @@ to cross-compile the executable.
 
 - Reduce frame-loop memory patching.
 - Separate UI, process attach, address resolution, and feature patch logic.
-- Keep changes small enough to verify against BO3 behavior.
-- Avoid frame generation work until frametime bottlenecks are measured.
+- Keep build and runtime changes small enough to verify against BO3 behavior.
+- Measure frame-time bottlenecks before talking about frame generation.
+- Treat overlays as diagnostics first, style second.
 
 ## Vulkan Experiment Lane
 
 The first cross-platform graphics lane lives in `profiles/bo3-vulkan/`.
 
-Start with `profiles/bo3-vulkan/README.md`, then use the benchmark and safety checklists before testing DXVK, Wine, RM11 Pro, frame generation, or screen-space ray effects.
+Start with `profiles/bo3-vulkan/README.md`, then use the benchmark and safety
+checklists before testing DXVK, Wine, RM11 Pro, frame generation, or
+screen-space ray effects.
+
+## Reversa Rules
+
+```text
+attach carefully
+measure frame-time
+hash the dependency
+keep the rollback path
+```
+
+Small Zombies note: Element 115 is lore. SHA-256 is the actual wonder weapon.
+
+## Release Notes
+
+Public release metadata for this lane belongs in:
+
+- [Reversa-Artifacts](https://github.com/Fractal-Echo/Reversa-Artifacts)
+
+No release is promoted without a build command, artifact hash, target runtime,
+and rollback note.
