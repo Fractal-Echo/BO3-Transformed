@@ -1,4 +1,4 @@
-# BO3 Transformed
+# BO3 Zombies Runtime Lab
 
 Black Ops 3 Zombies runtime research for deterministic builds, overlays,
 frame-time telemetry, and DXVK/Vulkan experiments.
@@ -11,7 +11,7 @@ to review, rebuild, and reverse when the game disagrees.
 The repo is intended to live in Ubuntu/WSL for source control and code review:
 
 ```sh
-cd ~/repositories/BO3-Transformed
+cd ~/repositories/BO3-Zombies-Runtime-Lab
 git status
 ```
 
